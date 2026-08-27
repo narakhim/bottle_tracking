@@ -1,0 +1,84 @@
+@startuml GasflaschenTracker_UseCases
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle awesome
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #102A43
+    ArrowColor #287D6B
+    ActorBorderColor #102A43
+    ActorFontColor #102A43
+    UsecaseFontColor #102A43
+}
+
+actor "Benutzer" as user
+actor "Browser\n(localStorage)" as storage
+
+rectangle "Gasflaschen Tracker" {
+    usecase "Räume verwalten" as manageRooms
+    usecase "Raum anlegen" as addRoom
+    usecase "Station zuordnen" as assignStation
+    usecase "Raumfarbe festlegen" as colorRoom
+    usecase "Gasflaschen verwalten" as manageBottles
+    usecase "Flasche im Zielraum\nanlegen" as addBottle
+    usecase "Flasche verschieben" as moveBottle
+    usecase "Barcode scannen" as scanBarcode
+    usecase "Kamera verwenden" as useCamera
+    usecase "Flaschenstatus\nverwalten" as manageStatus
+    usecase "Flasche als leer\nmarkieren" as markEmpty
+    usecase "Flasche deaktivieren\noder reaktivieren" as manageDeactivated
+    usecase "Flasche als Missing\nmarkieren" as markMissing
+    usecase "Flaschenhistorie\nanzeigen" as showHistory
+    usecase "Raumhistorie\nanzeigen" as showRoomHistory
+    usecase "Kompakte Flaschenansicht" as compactView
+    usecase "Bestand filtern" as filterInventory
+    usecase "Bestand durchsuchen" as search
+    usecase "Bestand als CSV\nexportieren" as exportCsv
+    usecase "Demo-Daten\nzurücksetzen" as reset
+    usecase "Bestand speichern\nund laden" as persist
+}
+
+user --> manageRooms
+user --> manageBottles
+user --> moveBottle
+user --> scanBarcode
+user --> manageStatus
+user --> showHistory
+user --> showRoomHistory
+user --> filterInventory
+user --> search
+user --> exportCsv
+user --> reset
+
+manageRooms ..> addRoom : <<include>>
+addRoom ..> assignStation : <<include>>
+addRoom ..> colorRoom : <<include>>
+manageBottles ..> addBottle : <<include>>
+manageStatus ..> markMissing : <<include>>
+manageStatus ..> markEmpty : <<include>>
+manageStatus ..> manageDeactivated : <<include>>
+scanBarcode ..> useCamera : <<include>>
+scanBarcode ..> persist : <<include>>
+manageRooms ..> persist : <<include>>
+manageBottles ..> persist : <<include>>
+moveBottle ..> persist : <<include>>
+moveBottle ..> showHistory : <<include>>
+manageStatus ..> persist : <<include>>
+showHistory ..> persist : <<include>>
+showRoomHistory ..> persist : <<include>>
+filterInventory ..> compactView : <<include>>
+reset ..> persist : <<include>>
+
+storage --> persist
+storage --> reset : gespeicherte Daten löschen
+
+note right of exportCsv
+  Enthält Station, Raum,
+  Status und Historie
+end note
+
+note bottom of moveBottle
+  Zielraum wird vom Benutzer ausgewählt.
+end note
+@enduml

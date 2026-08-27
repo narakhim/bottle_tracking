@@ -1,0 +1,12 @@
+{
+    "java.project.referencedLibraries": [
+        "${userHome}/.m2/repository/com/h2database/h2/2.3.232/h2-2.3.232.jar"
+    ],
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-17",
+            "path": "C:\\Program Files\\Java\\jdk-17.0.2",
+            "default": true
+        }
+    ]
+}

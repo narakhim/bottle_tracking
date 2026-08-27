@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#102a43">
+    <title>Gasflaschen Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="#top" aria-label="Gasflaschen Tracker Startseite">
+            <span class="brand-mark" aria-hidden="true">GT</span>
+            <span>Gasflaschen<br><strong>Tracker</strong></span>
+        </a>
+        <div class="status"><span class="status-dot"></span> Lokal gespeichert</div>
+    </header>
+
+    <main id="top">
+        <section class="intro">
+            <div>
+                <p class="eyebrow">Bestand &middot; Standortverwaltung</p>
+                <h1>Alles im Blick.<br><em>Jede Flasche.</em></h1>
+                <p class="intro-copy">Verwalte deine Gasflaschen und finde ihren aktuellen Standort ohne Umwege.</p>
+            </div>
+            <div class="total-block">
+                <span class="total-label">Bestand gesamt</span>
+                <strong id="total-count">0</strong>
+                <span class="total-unit">Flaschen</span>
+            </div>
+        </section>
+
+        <section class="workspace" aria-label="Tracker Arbeitsbereich">
+            <aside class="control-panel">
+                <div class="panel-heading">
+                    <span class="panel-kicker">Verwalten</span>
+                    <h2>Bestand pflegen</h2>
+                </div>
+                <form id="room-form" class="form-block">
+                    <label for="room-name">Neuen Raum anlegen</label>
+                    <div class="input-row">
+                        <input id="room-name" type="text" placeholder="z. B. Lager Nord" maxlength="80" required>
+                        <button class="scan-button" type="button" data-scan-target="room-name" aria-label="Raumcode scannen" title="Raumcode scannen">⌁</button>
+                        <button class="icon-button" type="submit" aria-label="Raum anlegen" title="Raum anlegen">+</button>
+                    </div>
+                    <label class="sub-label" for="room-station">Station</label>
+                    <select id="room-station" class="form-select" required></select>
+                </form>
+                <div class="quick-assign">
+                    <div class="quick-assign-heading">
+                        <span class="panel-kicker">Schnellzuordnung</span>
+                        <h3>Mehrere Flaschen einem Raum zuweisen</h3>
+                    </div>
+                    <label for="bulk-room-select">Zielraum</label>
+                    <div class="quick-room-row">
+                        <select id="bulk-room-select" aria-label="Zielraum auswählen"></select>
+                        <button id="bulk-room-scan" class="scan-button" type="button" data-scan-target="bulk-room-input" aria-label="Zielraum scannen" title="Zielraum scannen">⌁</button>
+                    </div>
+                    <input id="bulk-room-input" class="visually-hidden" type="text" tabindex="-1" aria-hidden="true">
+                    <label for="bulk-bottle-input">Flaschen nacheinander scannen</label>
+                    <div class="input-row">
+                        <input id="bulk-bottle-input" type="text" placeholder="Flaschencode eingeben" maxlength="80">
+                        <button id="bulk-bottle-scan" class="scan-button" type="button" data-scan-target="bulk-bottle-input" aria-label="Flasche scannen" title="Flasche scannen">⌁</button>
+                        <button id="bulk-assign-button" class="icon-button" type="button" aria-label="Flasche zuordnen" title="Flasche zuordnen">+</button>
+                    </div>
+                    <p id="bulk-assign-status" class="bulk-status">Zuerst einen Zielraum auswählen.</p>
+                </div>
+                <div class="tip">
+                    <span class="tip-icon">i</span>
+                    <p>Eine Flasche kann jederzeit einem neuen Raum zugewiesen werden.</p>
+                </div>
+                <button id="reset-button" class="text-button" type="button">Demo-Daten zur&uuml;cksetzen <span>&rarr;</span></button>
+            </aside>
+
+            <div class="inventory-panel">
+                <div class="inventory-toolbar">
+                    <div>
+                        <span class="panel-kicker">Standort&uuml;bersicht</span>
+                        <h2>R&auml;ume & Flaschen</h2>
+                    </div>
+                    <label class="search-box" aria-label="Bestand durchsuchen">
+                        <span aria-hidden="true">&#8981;</span>
+                        <input id="search-input" type="search" placeholder="Suchen...">
+                    </label>
+                    <details id="filter-menu" class="filter-menu">
+                        <summary><span aria-hidden="true">≡</span> Filter <b id="filter-count">0</b></summary>
+                        <div id="filter-panel" class="filter-panel" aria-label="Bestand filtern">
+                            <fieldset class="filter-group">
+                                <legend>Status</legend>
+                                <label><input name="status-filter" type="checkbox" value="active"> Aktiv</label>
+                                <label><input name="status-filter" type="checkbox" value="empty"> Leer</label>
+                                <label><input name="status-filter" type="checkbox" value="missing"> Missing</label>
+                                <label><input name="status-filter" type="checkbox" value="deactivated"> Deaktiviert</label>
+                            </fieldset>
+                            <fieldset class="filter-group"><legend>Station</legend><div id="station-filter" class="filter-options"></div></fieldset>
+                            <fieldset class="filter-group"><legend>Raum</legend><div id="room-filter" class="filter-options"></div></fieldset>
+                        </div>
+                    </details>
+                    <button id="scan-search-button" class="scan-search-button" type="button" title="Barcode suchen"><span aria-hidden="true">⌁</span> Scannen</button>
+                    <button id="export-button" class="export-button" type="button" title="Bestand als CSV exportieren"><span aria-hidden="true">&#8595;</span> CSV exportieren</button>
+                </div>
+                <div id="room-grid" class="room-grid"></div>
+                <div id="empty-state" class="empty-state" hidden>
+                    <span class="empty-mark">--</span>
+                    <h3>Noch kein Bestand</h3>
+                    <p>Lege links einen Raum oder eine Flasche an.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <dialog id="scanner-dialog" class="scanner-dialog">
+        <div class="scanner-content">
+            <div class="scanner-header">
+                <div>
+                    <span class="panel-kicker">Barcode-Scanner</span>
+                    <h2 id="scanner-title">Code scannen</h2>
+                </div>
+                <button id="close-scanner" class="close-button" type="button" aria-label="Scanner schließen">×</button>
+            </div>
+            <div class="camera-frame">
+                <video id="camera-preview" autoplay muted playsinline></video>
+                <div class="scan-reticle" aria-hidden="true"></div>
+                <p id="scanner-message">Kamera wird vorbereitet...</p>
+            </div>
+            <p class="scanner-fallback">Kein Kamerazugriff? Code manuell eingeben:</p>
+            <div class="scanner-manual-row">
+                <input id="scanner-input" type="text" placeholder="Barcode oder QR-Code">
+                <button id="use-scanner-input" class="primary-button" type="button">Übernehmen</button>
+            </div>
+            <label class="scan-note-toggle"><input id="scan-note-enabled" type="checkbox"> Zusätzliche Information an Flasche anhängen</label>
+            <textarea id="scan-note" class="scan-note" rows="3" maxlength="500" placeholder="Information zur Flasche" hidden></textarea>
+        </div>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/zxing-browser.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

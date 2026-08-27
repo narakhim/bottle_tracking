@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "GasflaschenTracker (Maven)",
+            "request": "launch",
+            "mainClass": "GasflaschenTracker",
+            "projectName": "bottle-tracking",
+            "preLaunchTask": "maven-compile"
+        }
+    ]
+}

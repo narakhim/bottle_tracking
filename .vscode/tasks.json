@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "maven-compile",
+            "type": "shell",
+            "command": "${userHome}\\tools\\apache-maven-3.9.10\\bin\\mvn.cmd",
+            "args": ["compile"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": "$javac"
+        }
+    ]
+}

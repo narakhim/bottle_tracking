@@ -1,0 +1,6 @@
+#FileLock
+#Thu Aug 27 16:28:05 CEST 2026
+hostName=192.168.30.17
+id=1a0439ebb6cc8f4c7322c5235e3e10eafb0f0ecd409
+method=file
+server=192.168.30.17\:65030
