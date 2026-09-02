@@ -3,15 +3,11 @@ history soll statusveränderungen dokumentieren
 csv soll nur gefilterte elemente speichern
 
 er diagramm von datenbank 3. normalform
+mehr app feeling
+bcd ui elemente
 
-wsl --shutdown
-taskkill /F /IM "Docker Desktop.exe"
-taskkill /F /IM "com.docker.backend.exe"
+
 $env:DB_PASSWORD = "bcd1234567"
 $env:INITIAL_ADMIN_PASSWORD = "bcd1234567"
-
+docker compose down -v
 docker compose up --build -d
-docker compose ps
-docker logs bottle_tracking-app-1 --tail 200
-git config --global user.email "sxh.exe256@gmail.com"
-git config --global user.name "narakhim"

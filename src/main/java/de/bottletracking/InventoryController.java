@@ -3,6 +3,7 @@ package de.bottletracking;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
@@ -32,6 +33,22 @@ public class InventoryController {
                    LEFT JOIN stations s ON s.id = r.station_id
             ORDER BY b.code
             """);
+        Map<Long, List<Map<String, Object>>> historyByBottle = jdbc.queryForList("""
+            SELECT bottle_id, from_room_id, to_room_id, action, changed_at, changed_by
+            FROM bottle_history
+            ORDER BY changed_at ASC, id ASC
+            """).stream().collect(Collectors.groupingBy(
+                row -> ((Number) row.get("bottle_id")).longValue(), LinkedHashMap::new, Collectors.mapping(row -> {
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    entry.put("from_room_id", row.get("from_room_id"));
+                    entry.put("to_room_id", row.get("to_room_id"));
+                    entry.put("action", row.get("action"));
+                    entry.put("moved_at", row.get("changed_at"));
+                    entry.put("changed_by", row.get("changed_by"));
+                    return entry;
+                }, Collectors.toList())));
+        bottles.forEach(bottle -> bottle.put("history", historyByBottle.getOrDefault(
+            ((Number) bottle.get("id")).longValue(), List.of())));
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("user", Map.of("username", authentication.getName(), "role", authentication.getAuthorities().iterator().next().getAuthority()));
         response.put("stations", stations);

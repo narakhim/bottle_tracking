@@ -89,7 +89,7 @@ async function refreshInventory() {
     STATION_COLORS = Object.fromEntries(data.stations.map(station => [station.name, station.color]));
     state = {
         rooms: data.rooms.map(room => ({ id: String(room.id), name: room.name, stationId: room.station || "Ohne Station", color: room.color || "mint" })),
-        bottles: data.bottles.map(bottle => ({ id: String(bottle.id), code: bottle.code, status: bottle.status.toLowerCase(), note: bottle.note || "", currentRoomId: bottle.current_room_id == null ? null : String(bottle.current_room_id), history: [] }))
+        bottles: data.bottles.map(bottle => ({ id: String(bottle.id), code: bottle.code, status: bottle.status.toLowerCase(), note: bottle.note || "", currentRoomId: bottle.current_room_id == null ? null : String(bottle.current_room_id), history: (bottle.history || []).map(entry => ({ fromRoomId: entry.from_room_id == null ? null : String(entry.from_room_id), toRoomId: entry.to_room_id == null ? null : String(entry.to_room_id), action: entry.action.toLowerCase(), movedAt: entry.moved_at, changedBy: entry.changed_by })) }))
     };
     document.querySelector("#connection-status").textContent = `Angemeldet: ${data.user.username}`;
     document.querySelector("#logout-button").hidden = false;
@@ -108,7 +108,7 @@ function roomById(id) { return state.rooms.find(room => room.id === id); }
 function formatDate(timestamp) { return new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" }).format(new Date(timestamp)); }
 function statusLabel(status) { return { active: "Aktiv", empty: "Leer", missing: "Missing", deactivated: "Deaktiviert" }[status]; }
 function stationColor(stationId) { return STATION_COLORS[stationId] || "mint"; }
-function roomHistory(roomId) { return state.bottles.filter(bottle => bottle.history.some(entry => entry.fromRoomId === roomId || entry.toRoomId === roomId)); }
+function roomHistory(roomId) { return state.bottles.filter(bottle => bottle.history.some(entry => entry.action.startsWith("assigned") && (entry.fromRoomId === roomId || entry.toRoomId === roomId))); }
 function selectedFilterValues(name) { return new Set([...filterPanel.querySelectorAll(`input[name="${name}"]:checked`)].map(input => input.value)); }
 function matchesBottleQuery(bottle, query) {
     if (!query) return true;
@@ -162,12 +162,21 @@ function roomCard(room, bottles, index, unassigned = false) {
 function bottleRow(bottle, fromRoomId) {
     const targetRooms = state.rooms.filter(room => room.id !== fromRoomId);
     const options = targetRooms.map(room => `<option value="${escapeAttribute(room.id)}">${escapeHtml(room.name)}</option>`).join("");
-    const historyMarkup = bottle.history.slice().reverse().map(entry => `<li><strong>${escapeHtml(entry.toRoomId ? roomById(entry.toRoomId)?.name || "Unbekannter Raum" : "Lager")}</strong><time>${formatDate(entry.movedAt)}</time></li>`).join("");
+    const historyMarkup = bottle.history.slice().reverse().map(entry => `<li><strong>${escapeHtml(historyLabel(entry))}</strong><span>${escapeHtml(entry.changedBy || "")}</span><time>${formatDate(entry.movedAt)}</time></li>`).join("");
     const noteMarkup = bottle.note ? `<p class="bottle-note"><strong>Info:</strong> ${escapeHtml(bottle.note)}</p>` : "";
     const selectMarkup = options ? `<select class="move-select" data-bottle-id="${escapeAttribute(bottle.id)}" aria-label="${escapeAttribute(bottle.code)} verschieben"><option value="">Verschieben nach...</option>${options}</select>` : "";
     const nextStatus = bottle.status === "deactivated" ? "active" : "deactivated";
     const nextStatusText = bottle.status === "deactivated" ? "Reaktivieren" : "Deaktivieren";
     return `<li class="bottle-row"><details class="bottle-details"><summary><span class="bottle-line"><span class="bottle ${bottle.status}">${escapeHtml(bottle.code)}</span><span class="status-chip ${bottle.status}">${statusLabel(bottle.status)}</span></span></summary><div class="bottle-controls">${noteMarkup}${selectMarkup}<button class="small-button" type="button" data-status-id="${escapeAttribute(bottle.id)}" data-status="${bottle.status === "empty" ? "active" : "empty"}">${bottle.status === "empty" ? "Als voll markieren" : "Als leer markieren"}</button><button class="small-button" type="button" data-status-id="${escapeAttribute(bottle.id)}" data-status="missing">Als vermisst markieren</button><button class="small-button" type="button" data-status-id="${escapeAttribute(bottle.id)}" data-status="${nextStatus}">${nextStatusText}</button><details class="history"><summary>Flaschenhistorie (${bottle.history.length})</summary><ol>${historyMarkup}</ol></details></div></details></li>`;
+}
+
+function historyLabel(entry) {
+    if (entry.action.startsWith("assigned")) {
+        const fromRoom = entry.fromRoomId ? roomById(entry.fromRoomId)?.name || "Unbekannter Raum" : "Lager";
+        const toRoom = entry.toRoomId ? roomById(entry.toRoomId)?.name || "Unbekannter Raum" : "Lager";
+        return `${fromRoom} -> ${toRoom}`;
+    }
+    return `Status: ${statusLabel(entry.action) || entry.action}`;
 }
 
 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character])); }

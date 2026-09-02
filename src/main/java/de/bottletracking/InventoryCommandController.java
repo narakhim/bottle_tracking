@@ -57,8 +57,12 @@ public class InventoryCommandController {
     @PatchMapping("/api/inventory/bottles/{id}/status")
     @Transactional
     public Map<String, Object> status(@PathVariable long id, @RequestBody StatusRequest request, Authentication authentication) {
-        jdbc.update("UPDATE bottles SET status = ? WHERE id = ?", request.status(), id);
-        addHistory(id, null, null, request.status(), authentication.getName(), null);
+        Map<String, Object> bottle = jdbc.queryForMap("SELECT status, current_room_id FROM bottles WHERE id = ?", id);
+        if (!request.status().equals(bottle.get("status"))) {
+            Long currentRoom = bottle.get("current_room_id") == null ? null : ((Number) bottle.get("current_room_id")).longValue();
+            jdbc.update("UPDATE bottles SET status = ? WHERE id = ?", request.status(), id);
+            addHistory(id, currentRoom, currentRoom, request.status(), authentication.getName(), null);
+        }
         return jdbc.queryForMap("SELECT id, code, status, note, current_room_id FROM bottles WHERE id = ?", id);
     }
 
