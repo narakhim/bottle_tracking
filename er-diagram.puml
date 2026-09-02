@@ -1,0 +1,77 @@
+@startuml GasflaschenTracker_ER
+hide methods
+hide stereotypes
+skinparam linetype ortho
+skinparam shadowing false
+skinparam entity {
+    BackgroundColor #FFFFFF
+    BorderColor #102A43
+    FontColor #102A43
+}
+
+' 3NF: Jede Entitaet beschreibt genau einen fachlichen Gegenstand.
+entity "app_users" as app_users {
+    * username : VARCHAR(80) <<PK>>
+    --
+    password : VARCHAR(100)
+    enabled : BOOLEAN
+}
+
+entity "user_authorities" as user_authorities {
+    * username : VARCHAR(80) <<PK, FK>>
+    * authority : VARCHAR(80) <<PK>>
+}
+
+entity "stations" as stations {
+    * id : BIGINT <<PK>>
+    --
+    name : VARCHAR(80) <<UK>>
+    color : VARCHAR(30)
+}
+
+entity "rooms" as rooms {
+    * id : BIGINT <<PK>>
+    --
+    name : VARCHAR(120) <<UK>>
+    station_id : BIGINT <<FK>>
+}
+
+entity "bottles" as bottles {
+    * id : BIGINT <<PK>>
+    --
+    code : VARCHAR(120) <<UK>>
+    status : VARCHAR(30)
+    note : VARCHAR(1000)
+    current_room_id : BIGINT <<FK>>
+}
+
+entity "bottle_history" as bottle_history {
+    * id : BIGINT <<PK>>
+    --
+    bottle_id : BIGINT <<FK>>
+    from_room_id : BIGINT <<logical FK>>
+    to_room_id : BIGINT <<logical FK>>
+    action : VARCHAR(40)
+    changed_at : TIMESTAMP WITH TIME ZONE
+    changed_by : VARCHAR(80) <<logical FK>>
+}
+
+app_users ||--o{ user_authorities : "hat Rollen"
+stations ||--o{ rooms : "enthaelt"
+rooms |o--o{ bottles : "aktueller Standort"
+bottles ||--o{ bottle_history : "protokolliert"
+rooms |o--o{ bottle_history : "Ausgangsraum"
+rooms |o--o{ bottle_history : "Zielraum"
+app_users ||--o{ bottle_history : "geaendert von"
+
+note bottom
+  3. Normalform:
+  - Jede Tabelle hat einen eindeutigen Primaerschluessel.
+  - Nichtschluesselattribute haengen nur vom Primaerschluessel ab.
+  - Keine transitiven Abhaengigkeiten: Stationsdaten stehen nur in stations,
+    Raumdaten nur in rooms und Benutzerdaten nur in app_users.
+  - user_authorities verwendet den zusammengesetzten Schluessel (username, authority).
+    - Die drei als "logical FK" markierten Beziehungen sind im aktuellen SQL-Schema
+        noch nicht als Datenbank-Constraints definiert.
+end note
+@enduml

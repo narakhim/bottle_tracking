@@ -1,6 +1,7 @@
 const STORAGE_KEY = "gasflaschen-tracker-data";
 let STATIONS = ["Nord", "Süd", "West", "Ost"];
 let STATION_COLORS = { Nord: "mint", Süd: "coral", West: "blue", Ost: "yellow" };
+let STATION_IDS = {};
 const initialData = {
     rooms: [{ id: "room-101", name: "Room 101", stationId: "Nord", color: "mint" }, { id: "room-102", name: "Room 102", stationId: "Süd", color: "coral" }],
     bottles: [
@@ -31,6 +32,9 @@ const scannerMessage = document.querySelector("#scanner-message");
 const bulkRoomSelect = document.querySelector("#bulk-room-select");
 const bulkBottleInput = document.querySelector("#bulk-bottle-input");
 const bulkAssignStatus = document.querySelector("#bulk-assign-status");
+const locationAdmin = document.querySelector("#location-admin");
+const stationAdminList = document.querySelector("#station-admin-list");
+const roomAdminList = document.querySelector("#room-admin-list");
 
 function loadState() {
     try {
@@ -87,6 +91,7 @@ async function refreshInventory() {
     const data = await api("/api/inventory");
     STATIONS = data.stations.map(station => station.name);
     STATION_COLORS = Object.fromEntries(data.stations.map(station => [station.name, station.color]));
+    STATION_IDS = Object.fromEntries(data.stations.map(station => [station.name, station.id]));
     state = {
         rooms: data.rooms.map(room => ({ id: String(room.id), name: room.name, stationId: room.station || "Ohne Station", color: room.color || "mint" })),
         bottles: data.bottles.map(bottle => ({ id: String(bottle.id), code: bottle.code, status: bottle.status.toLowerCase(), note: bottle.note || "", currentRoomId: bottle.current_room_id == null ? null : String(bottle.current_room_id), history: (bottle.history || []).map(entry => ({ fromRoomId: entry.from_room_id == null ? null : String(entry.from_room_id), toRoomId: entry.to_room_id == null ? null : String(entry.to_room_id), action: entry.action.toLowerCase(), movedAt: entry.moved_at, changedBy: entry.changed_by })) }))
@@ -94,7 +99,49 @@ async function refreshInventory() {
     document.querySelector("#connection-status").textContent = `Angemeldet: ${data.user.username}`;
     document.querySelector("#logout-button").hidden = false;
     document.querySelector("#user-form").hidden = data.user.role !== "ROLE_ADMIN";
+    locationAdmin.hidden = data.user.role !== "ROLE_ADMIN";
+    if (data.user.role === "ROLE_ADMIN") renderLocationAdmin();
     render();
+}
+
+function renderLocationAdmin() {
+    stationAdminList.innerHTML = `<p class="admin-list-title">Stationen</p>${dataRows(STATIONS.map(name => ({ id: name, name, detail: STATION_COLORS[name] || "" })), "station")}`;
+    roomAdminList.innerHTML = `<p class="admin-list-title">Räume</p>${dataRows(state.rooms.map(room => ({ id: room.id, name: room.name, detail: room.stationId })), "room")}`;
+}
+
+function dataRows(items, type) {
+    return items.length ? items.map(item => `<div class="admin-row"><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.detail)}</small></span><span class="admin-actions"><button class="small-button" type="button" data-admin-action="edit-${type}" data-admin-id="${escapeAttribute(item.id)}">Bearbeiten</button><button class="small-button danger-button" type="button" data-admin-action="delete-${type}" data-admin-id="${escapeAttribute(item.id)}">Löschen</button></span></div>`).join("") : '<p class="admin-empty">Keine Einträge</p>';
+}
+
+async function handleLocationAdmin(event) {
+    const button = event.target.closest("[data-admin-action]");
+    if (!button) return;
+    const action = button.dataset.adminAction;
+    const id = button.dataset.adminId;
+    const item = action.includes("station") ? STATIONS.find(name => name === id) : state.rooms.find(room => room.id === id);
+    if (!item) return;
+    try {
+        if (action === "edit-station") {
+            const name = prompt("Name der Station", item);
+            if (name === null || !name.trim()) return;
+            const color = prompt("Farbe der Station", STATION_COLORS[item] || "mint");
+            if (color === null || !color.trim()) return;
+            await api(`/api/admin/stations/${encodeURIComponent(STATION_IDS[id])}`, { method: "PUT", body: JSON.stringify({ name: name.trim(), color: color.trim() }) });
+        } else if (action === "delete-station") {
+            if (!confirm(`Station "${item}" wirklich löschen?`)) return;
+            await api(`/api/admin/stations/${encodeURIComponent(STATION_IDS[id])}`, { method: "DELETE" });
+        } else if (action === "edit-room") {
+            const name = prompt("Name des Raums", item.name);
+            if (name === null || !name.trim()) return;
+            const station = prompt(`Station (${STATIONS.join(", ")})`, item.stationId);
+            if (station === null || !STATIONS.includes(station.trim())) return showToast("Diese Station existiert nicht.");
+            await api(`/api/admin/rooms/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ name: name.trim(), stationId: STATION_IDS[station.trim()] }) });
+        } else if (action === "delete-room") {
+            if (!confirm(`Raum "${item.name}" wirklich löschen? Zugeordnete Flaschen kommen ins Lager.`)) return;
+            await api(`/api/admin/rooms/${encodeURIComponent(id)}`, { method: "DELETE" });
+        }
+        await refreshInventory(); showToast("Änderung gespeichert.");
+    } catch (error) { showToast(error.message); }
 }
 
 function showToast(message) {
@@ -323,4 +370,5 @@ document.querySelector("#user-form").addEventListener("submit", async event => {
         showToast(`Benutzer "${username}" wurde angelegt.`);
     } catch (error) { showToast(error.message); }
 });
+locationAdmin.addEventListener("click", handleLocationAdmin);
 api("/api/auth/me").then(refreshInventory).catch(() => showLogin());

@@ -171,6 +171,19 @@ input { min-width: 0; border: 0; outline: 0; font: inherit; }
 .bottle-note strong { color: var(--ink); }
 .primary-button { padding: 10px 13px; border: 0; color: var(--white); background: var(--ink); font: 11px "DM Mono", monospace; cursor: pointer; }
 .primary-button:hover { background: var(--mint-dark); }
+.location-admin { margin: 35px -30px 0; padding: 25px 30px 0; border-top: 1px solid #34506a; }
+.location-admin h3 { margin: 0 0 18px; color: var(--white); font-size: 16px; line-height: 1.2; }
+.location-admin .panel-kicker { margin-bottom: 8px; color: var(--coral); }
+.admin-list { display: grid; gap: 7px; margin-bottom: 18px; }
+.admin-list-title { margin: 0 0 3px; color: var(--yellow); font: 10px "DM Mono", monospace; text-transform: uppercase; }
+.admin-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid #34506a; }
+.admin-row strong, .admin-row small { display: block; overflow-wrap: anywhere; }
+.admin-row strong { color: var(--white); font-size: 11px; }
+.admin-row small { margin-top: 2px; color: #9fb3c8; font: 9px "DM Mono", monospace; }
+.admin-actions { display: flex; flex: 0 0 auto; gap: 4px; }
+.admin-actions .small-button { padding: 4px; border-color: #526b82; color: #d9e2ec; font-size: 9px; }
+.admin-actions .danger-button:hover { border-color: var(--coral); color: var(--coral); }
+.admin-empty { margin: 0; color: #9fb3c8; font-size: 11px; }
 .login-dialog { width: min(390px, calc(100% - 32px)); padding: 0; border: 0; color: var(--ink); background: var(--white); box-shadow: 0 25px 80px rgba(16,42,67,.3); }
 .login-dialog::backdrop { background: rgba(16,42,67,.72); }
 .login-content { display: grid; gap: 10px; padding: 30px; }

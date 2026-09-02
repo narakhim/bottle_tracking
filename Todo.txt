@@ -1,4 +1,3 @@
-java code entfernen
 history soll statusveränderungen dokumentieren
 csv soll nur gefilterte elemente speichern
 
