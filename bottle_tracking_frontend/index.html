@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gasflaschen-Tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Frontend-Projekt</p>
+          <h1>Gasflaschen-Tracker</h1>
+        </div>
+        <button id="exportCsvBtn" class="primary-btn">CSV exportieren</button>
+      </header>
+
+      <main class="layout">
+        <section class="panel">
+          <h2>Neue Flasche</h2>
+          <form id="bottleForm">
+            <label>
+              Flaschennummer
+              <input id="bottleNumber" name="bottleNumber" type="text" placeholder="z. B. F-104" required />
+            </label>
+            <label>
+              Raum
+              <select id="roomSelect" required></select>
+            </label>
+            <label>
+              Status
+              <select id="statusSelect">
+                <option value="voll">voll</option>
+                <option value="leer">leer</option>
+                <option value="reserviert">reserviert</option>
+              </select>
+            </label>
+            <button type="submit" class="primary-btn">Hinzufügen</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <h2>Filter</h2>
+          <div class="filters">
+            <label>
+              Raum
+              <select id="filterRoomSelect">
+                <option value="all">Alle</option>
+              </select>
+            </label>
+            <label>
+              Status
+              <select id="filterStatusSelect">
+                <option value="all">Alle</option>
+                <option value="voll">voll</option>
+                <option value="leer">leer</option>
+                <option value="reserviert">reserviert</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel wide">
+          <h2>Bestand</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Flasche</th>
+                  <th>Raum</th>
+                  <th>Status</th>
+                  <th>Letzte Änderung</th>
+                  <th>Aktion</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel wide">
+          <h2>Historie</h2>
+          <ul id="historyList" class="history-list"></ul>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
