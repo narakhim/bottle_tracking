@@ -16,7 +16,7 @@
             <span class="brand-mark" aria-hidden="true">GT</span>
             <span>Gasflaschen<br><strong>Tracker</strong></span>
         </a>
-        <div class="status"><span class="status-dot"></span> Lokal gespeichert</div>
+        <div class="status"><span class="status-dot"></span><span id="connection-status">Nicht angemeldet</span> <button id="logout-button" class="text-button" type="button" hidden>Abmelden</button></div>
     </header>
 
     <main id="top">
@@ -72,6 +72,16 @@
                     <span class="tip-icon">i</span>
                     <p>Eine Flasche kann jederzeit einem neuen Raum zugewiesen werden.</p>
                 </div>
+                <form id="user-form" class="form-block" hidden>
+                    <label for="new-username">Benutzer anlegen</label>
+                    <input id="new-username" type="text" placeholder="Benutzername" minlength="3" maxlength="80" required>
+                    <input id="new-password" type="password" placeholder="Passwort (mind. 10 Zeichen)" minlength="10" required>
+                    <select id="new-user-role" class="form-select">
+                        <option value="USER">Benutzer</option>
+                        <option value="ADMIN">Administrator</option>
+                    </select>
+                    <button class="primary-button" type="submit">Benutzer speichern</button>
+                </form>
                 <button id="reset-button" class="text-button" type="button">Demo-Daten zur&uuml;cksetzen <span>&rarr;</span></button>
             </aside>
 
@@ -137,6 +147,19 @@
     </dialog>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <dialog id="login-dialog" class="login-dialog" aria-labelledby="login-title">
+        <form id="login-form" class="login-content">
+            <span class="panel-kicker">Serverzugang</span>
+            <h2 id="login-title">Anmelden</h2>
+            <p>Der Bestand wird zentral auf dem Server gespeichert.</p>
+            <label for="login-username">Benutzername</label>
+            <input id="login-username" autocomplete="username" required>
+            <label for="login-password">Passwort</label>
+            <input id="login-password" type="password" autocomplete="current-password" required>
+            <p id="login-error" class="login-error" role="alert"></p>
+            <button class="primary-button" type="submit">Anmelden</button>
+        </form>
+    </dialog>
     <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/zxing-browser.min.js"></script>
     <script src="app.js"></script>
 </body>

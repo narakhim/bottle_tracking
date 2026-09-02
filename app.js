@@ -1,6 +1,6 @@
 const STORAGE_KEY = "gasflaschen-tracker-data";
-const STATIONS = ["Nord", "Süd", "West", "Ost"];
-const STATION_COLORS = { Nord: "mint", Süd: "coral", West: "blue", Ost: "yellow" };
+let STATIONS = ["Nord", "Süd", "West", "Ost"];
+let STATION_COLORS = { Nord: "mint", Süd: "coral", West: "blue", Ost: "yellow" };
 const initialData = {
     rooms: [{ id: "room-101", name: "Room 101", stationId: "Nord", color: "mint" }, { id: "room-102", name: "Room 102", stationId: "Süd", color: "coral" }],
     bottles: [
@@ -9,7 +9,7 @@ const initialData = {
     ]
 };
 
-let state = loadState();
+let state = structuredClone(initialData);
 let scannerStream;
 let scannerFrame;
 let scannerReader;
@@ -66,7 +66,36 @@ function createBottle(code, currentRoomId, index = 0, status = "active") {
     return { id: `bottle-${Date.now()}-${index}`, code, status, note: "", currentRoomId, history: [{ fromRoomId: null, toRoomId: currentRoomId, action: status === "missing" ? "missing" : "assigned", movedAt: new Date().toISOString() }] };
 }
 
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveState() { /* Der Bestand wird ausschließlich über die Server-API gespeichert. */ }
+
+async function api(path, options = {}) {
+    const response = await fetch(path, { credentials: "same-origin", headers: { "Content-Type": "application/json", ...(options.headers || {}) }, ...options });
+    if (response.status === 401) { showLogin(); throw new Error("Bitte erneut anmelden."); }
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || body.message || "Die Anfrage konnte nicht gespeichert werden.");
+    }
+    return response.status === 204 ? null : response.json();
+}
+
+function showLogin(message = "") {
+    document.querySelector("#login-error").textContent = message;
+    if (!document.querySelector("#login-dialog").open) document.querySelector("#login-dialog").showModal();
+}
+
+async function refreshInventory() {
+    const data = await api("/api/inventory");
+    STATIONS = data.stations.map(station => station.name);
+    STATION_COLORS = Object.fromEntries(data.stations.map(station => [station.name, station.color]));
+    state = {
+        rooms: data.rooms.map(room => ({ id: String(room.id), name: room.name, stationId: room.station || "Ohne Station", color: room.color || "mint" })),
+        bottles: data.bottles.map(bottle => ({ id: String(bottle.id), code: bottle.code, status: bottle.status.toLowerCase(), note: bottle.note || "", currentRoomId: bottle.current_room_id == null ? null : String(bottle.current_room_id), history: [] }))
+    };
+    document.querySelector("#connection-status").textContent = `Angemeldet: ${data.user.username}`;
+    document.querySelector("#logout-button").hidden = false;
+    document.querySelector("#user-form").hidden = data.user.role !== "ROLE_ADMIN";
+    render();
+}
 
 function showToast(message) {
     toast.textContent = message;
@@ -144,57 +173,50 @@ function bottleRow(bottle, fromRoomId) {
 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character])); }
 function escapeAttribute(value) { return escapeHtml(value); }
 
-function addRoom(event) {
+async function addRoom(event) {
     event.preventDefault();
     const input = document.querySelector("#room-name");
     const name = input.value.trim();
     if (!name) return;
     if (state.rooms.some(room => room.name.toLowerCase() === name.toLowerCase())) return showToast("Dieser Raum existiert bereits.");
-    state.rooms.push({ id: `room-${Date.now()}`, name, stationId: roomStation.value, color: stationColor(roomStation.value) }); input.value = ""; saveState(); render(); showToast(`Raum "${name}" angelegt.`);
+    try {
+        await api("/api/inventory/rooms", { method: "POST", body: JSON.stringify({ name, station: roomStation.value }) });
+        input.value = ""; await refreshInventory(); showToast(`Raum "${name}" angelegt.`);
+    } catch (error) { showToast(error.message); }
 }
 
-function moveBottle(event) {
+async function moveBottle(event) {
     if (!event.target.matches(".move-select") || !event.target.value) return;
     const bottle = state.bottles.find(item => item.id === event.target.dataset.bottleId);
     const room = roomById(event.target.value);
     if (!bottle || !room) return;
-        const previousRoomId = bottle.currentRoomId;
-        bottle.currentRoomId = room.id; bottle.status = bottle.status === "missing" ? "active" : bottle.status;
-        if (previousRoomId !== room.id) bottle.history.push({ fromRoomId: previousRoomId, toRoomId: room.id, action: previousRoomId ? "moved" : "assigned", movedAt: new Date().toISOString() });
-    saveState(); render(); showToast(`${bottle.code} nach ${room.name} verschoben.`);
+    try {
+        await api("/api/inventory/assign", { method: "POST", body: JSON.stringify({ code: bottle.code, roomId: Number(room.id), note: bottle.note }) });
+        await refreshInventory(); showToast(`${bottle.code} nach ${room.name} verschoben.`);
+    } catch (error) { showToast(error.message); }
 }
 
-function assignBulkBottle(note = "") {
+async function assignBulkBottle(note = "") {
     note = typeof note === "string" ? note.trim() : "";
     const room = roomById(bulkRoomSelect.value);
     const code = bulkBottleInput.value.trim();
     if (!room) return showToast("Bitte zuerst einen Zielraum auswählen.");
     if (!code) return;
-    let bottle = state.bottles.find(item => item.code.toLowerCase() === code.toLowerCase());
-    if (!bottle) {
-        bottle = createBottle(code, room.id);
-        bottle.note = note;
-        state.bottles.push(bottle);
-        showToast(`${code} registriert und ${room.name} zugeordnet.`);
-    } else if (bottle.currentRoomId === room.id) {
-        if (note) bottle.note = note;
-        showToast(`${code} befindet sich bereits in ${room.name}.`);
-    } else {
-            const previousRoomId = bottle.currentRoomId;
-            bottle.currentRoomId = room.id;
-            bottle.status = bottle.status === "missing" ? "active" : bottle.status;
-            if (previousRoomId !== room.id) bottle.history.push({ fromRoomId: previousRoomId, toRoomId: room.id, action: previousRoomId ? "moved" : "assigned", movedAt: new Date().toISOString() });
-        showToast(`${code} nach ${room.name} verschoben.`);
-    }
-    bulkBottleInput.value = "";
-    saveState(); render(); bulkBottleInput.focus();
+    try {
+        await api("/api/inventory/assign", { method: "POST", body: JSON.stringify({ code, roomId: Number(room.id), note }) });
+        bulkBottleInput.value = ""; await refreshInventory(); bulkBottleInput.focus();
+        showToast(`${code} wurde ${room.name} zugeordnet.`);
+    } catch (error) { showToast(error.message); }
 }
 
-function updateStatus(event) {
+async function updateStatus(event) {
     if (!event.target.matches("[data-status-id]")) return;
     const bottle = state.bottles.find(item => item.id === event.target.dataset.statusId);
     if (!bottle) return;
-    bottle.status = event.target.dataset.status; saveState(); render(); showToast(`${bottle.code}: ${statusLabel(bottle.status)}.`);
+    try {
+        await api(`/api/inventory/bottles/${encodeURIComponent(bottle.id)}/status`, { method: "PATCH", body: JSON.stringify({ status: event.target.dataset.status.toUpperCase() }) });
+        await refreshInventory(); showToast(`${bottle.code}: ${statusLabel(event.target.dataset.status)}.`);
+    } catch (error) { showToast(error.message); }
 }
 
 function csvCell(value) { return `"${String(value).replace(/"/g, '""')}"`; }
@@ -253,7 +275,7 @@ function closeScanner() { if (scannerFrame) cancelAnimationFrame(scannerFrame); 
 
 document.querySelector("#room-form").addEventListener("submit", addRoom);
 document.querySelector("#export-button").addEventListener("click", exportCsv);
-document.querySelector("#reset-button").addEventListener("click", () => { state = structuredClone(initialData); saveState(); render(); showToast("Demo-Daten wurden zurückgesetzt."); });
+document.querySelector("#reset-button").hidden = true;
 roomGrid.addEventListener("change", moveBottle); roomGrid.addEventListener("click", updateStatus); searchInput.addEventListener("input", render);
 filterPanel.addEventListener("change", event => { if (event.target.matches('input[type="checkbox"]')) render(); });
 bulkRoomSelect.addEventListener("change", render);
@@ -265,4 +287,31 @@ document.querySelector("#close-scanner").addEventListener("click", closeScanner)
 document.querySelector("#use-scanner-input").addEventListener("click", () => useScannerValue(document.querySelector("#scanner-input").value.trim()));
 document.querySelector("#scan-note-enabled").addEventListener("change", event => { document.querySelector("#scan-note").hidden = !event.target.checked; });
 scannerDialog.addEventListener("cancel", closeScanner);
-render();
+document.querySelector("#login-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    const username = document.querySelector("#login-username").value;
+    const password = document.querySelector("#login-password").value;
+    try {
+        await api("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password }) });
+        document.querySelector("#login-dialog").close();
+        await refreshInventory();
+    } catch (error) { document.querySelector("#login-error").textContent = error.message; }
+});
+document.querySelector("#logout-button").addEventListener("click", async () => {
+    await api("/api/auth/logout", { method: "POST" });
+    document.querySelector("#logout-button").hidden = true;
+    document.querySelector("#connection-status").textContent = "Nicht angemeldet";
+    showLogin();
+});
+document.querySelector("#user-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    const username = document.querySelector("#new-username").value.trim();
+    const password = document.querySelector("#new-password").value;
+    const role = document.querySelector("#new-user-role").value;
+    try {
+        await api("/api/admin/users", { method: "POST", body: JSON.stringify({ username, password, role }) });
+        event.target.reset();
+        showToast(`Benutzer "${username}" wurde angelegt.`);
+    } catch (error) { showToast(error.message); }
+});
+api("/api/auth/me").then(refreshInventory).catch(() => showLogin());

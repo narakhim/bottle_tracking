@@ -22,6 +22,14 @@ public class InventoryCommandController {
         this.jdbc = jdbc;
     }
 
+    @PostMapping("/api/inventory/rooms")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Map<String, Object> createRoom(@RequestBody RoomRequest request) {
+        Long stationId = jdbc.queryForObject("SELECT id FROM stations WHERE name = ?", Long.class, request.station());
+        jdbc.update("INSERT INTO rooms (name, station_id) VALUES (?, ?)", request.name(), stationId);
+        return jdbc.queryForMap("SELECT id, name, station_id FROM rooms WHERE name = ?", request.name());
+    }
+
     @PostMapping("/api/inventory/assign")
     @ResponseStatus(HttpStatus.CREATED)
     @Transactional
@@ -68,4 +76,5 @@ public class InventoryCommandController {
     public record AssignRequest(String code, long roomId, String note) { }
     public record StatusRequest(String status) { }
     public record NoteRequest(String note) { }
+    public record RoomRequest(String name, String station) { }
 }

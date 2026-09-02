@@ -1,0 +1,32 @@
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: bottle_tracking
+      POSTGRES_USER: bottle_tracking
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD muss gesetzt sein}
+    ports:
+      - "5432:5432"
+    volumes:
+      - bottle-tracking-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bottle_tracking -d bottle_tracking"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+  app:
+    build: .
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://database:5432/bottle_tracking
+      DB_USERNAME: bottle_tracking
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD muss gesetzt sein}
+      INITIAL_ADMIN_USERNAME: ${INITIAL_ADMIN_USERNAME:-admin}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:?INITIAL_ADMIN_PASSWORD muss gesetzt sein}
+    ports:
+      - "8080:8080"
+
+volumes:
+  bottle-tracking-postgres:
