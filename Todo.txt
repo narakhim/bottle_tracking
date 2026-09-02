@@ -5,9 +5,3 @@ csv soll nur gefilterte elemente speichern
 er diagramm von datenbank 3. normalform
 mehr app feeling
 bcd ui elemente
-
-
-$env:DB_PASSWORD = "bcd1234567"
-$env:INITIAL_ADMIN_PASSWORD = "bcd1234567"
-docker compose down -v
-docker compose up --build -d
