@@ -1,9 +1,10 @@
 const STORAGE_KEY = "gasflaschen-tracker-data";
-let STATIONS = ["Nord", "Süd", "West", "Ost"];
-let STATION_COLORS = { Nord: "mint", Süd: "coral", West: "blue", Ost: "yellow" };
+let STATIONS = [];
 let STATION_IDS = {};
+let STATION_COLORS = {};
+const COLOR_VALUES = { mint: "#007f91", coral: "#e86f2d", blue: "#5b9bd5", yellow: "#f5c242" };
 const initialData = {
-    rooms: [{ id: "room-101", name: "Room 101", stationId: "Nord", color: "mint" }, { id: "room-102", name: "Room 102", stationId: "Süd", color: "coral" }],
+    rooms: [{ id: "room-101", name: "Room 101", stationId: "Nord" }, { id: "room-102", name: "Room 102", stationId: "Süd" }],
     bottles: [
         { id: "bottle-01", code: "Flasche-01", status: "active", currentRoomId: "room-102", history: [{ fromRoomId: null, toRoomId: "room-102", action: "assigned", movedAt: "2026-08-26T09:30:00.000Z" }] },
         { id: "bottle-02", code: "Flasche-02", status: "active", currentRoomId: null, history: [{ fromRoomId: null, toRoomId: null, action: "assigned", movedAt: "2026-08-26T09:35:00.000Z" }] }
@@ -35,6 +36,9 @@ const bulkAssignStatus = document.querySelector("#bulk-assign-status");
 const locationAdmin = document.querySelector("#location-admin");
 const stationAdminList = document.querySelector("#station-admin-list");
 const roomAdminList = document.querySelector("#room-admin-list");
+const adminMenu = document.querySelector("#admin-menu");
+const viewTabs = [...document.querySelectorAll("[data-view]")];
+let activeView = "manage";
 
 function loadState() {
     try {
@@ -49,7 +53,7 @@ function loadState() {
 
 function normalizeState(saved) {
     return {
-        rooms: saved.rooms.map((room, index) => ({ id: room.id || `room-${index + 1}`, name: room.name, stationId: room.stationId || STATIONS[index % STATIONS.length], color: stationColor(room.stationId || STATIONS[index % STATIONS.length]) })),
+        rooms: saved.rooms.map((room, index) => ({ id: room.id || `room-${index + 1}`, name: room.name, stationId: room.stationId || STATIONS[index % STATIONS.length] })),
         bottles: saved.bottles.map((bottle, index) => ({
             id: bottle.id || `bottle-${index + 1}`, code: bottle.code || bottle.nummer,
                 status: ["active", "empty", "missing", "deactivated"].includes(bottle.status) ? bottle.status : (bottle.currentRoomId ? "active" : "missing"), note: typeof bottle.note === "string" ? bottle.note : "", currentRoomId: bottle.currentRoomId || null,
@@ -59,7 +63,7 @@ function normalizeState(saved) {
 }
 
 function migrateLegacyState(saved) {
-    const rooms = saved.rooms.map((room, index) => ({ id: `room-${index + 1}`, name: room.name, stationId: STATIONS[index % STATIONS.length], color: stationColor(STATIONS[index % STATIONS.length]) }));
+    const rooms = saved.rooms.map((room, index) => ({ id: `room-${index + 1}`, name: room.name, stationId: STATIONS[index % STATIONS.length] }));
     const bottles = [];
     saved.unassigned.forEach((code, index) => bottles.push(createBottle(code, null, index)));
     saved.rooms.forEach((room, roomIndex) => room.bottles.forEach((code, bottleIndex) => bottles.push(createBottle(code, rooms[roomIndex].id, bottleIndex))));
@@ -90,8 +94,8 @@ function showLogin(message = "") {
 async function refreshInventory() {
     const data = await api("/api/inventory");
     STATIONS = data.stations.map(station => station.name);
-    STATION_COLORS = Object.fromEntries(data.stations.map(station => [station.name, station.color]));
     STATION_IDS = Object.fromEntries(data.stations.map(station => [station.name, station.id]));
+    STATION_COLORS = Object.fromEntries(data.stations.map(station => [station.name, station.color || "mint"]));
     state = {
         rooms: data.rooms.map(room => ({ id: String(room.id), name: room.name, stationId: room.station || "Ohne Station", color: room.color || "mint" })),
         bottles: data.bottles.map(bottle => ({ id: String(bottle.id), code: bottle.code, status: bottle.status.toLowerCase(), note: bottle.note || "", currentRoomId: bottle.current_room_id == null ? null : String(bottle.current_room_id), history: (bottle.history || []).map(entry => ({ fromRoomId: entry.from_room_id == null ? null : String(entry.from_room_id), toRoomId: entry.to_room_id == null ? null : String(entry.to_room_id), action: entry.action.toLowerCase(), movedAt: entry.moved_at, changedBy: entry.changed_by })) }))
@@ -99,34 +103,50 @@ async function refreshInventory() {
     document.querySelector("#connection-status").textContent = `Angemeldet: ${data.user.username}`;
     document.querySelector("#logout-button").hidden = false;
     document.querySelector("#user-form").hidden = data.user.role !== "ROLE_ADMIN";
-    locationAdmin.hidden = data.user.role !== "ROLE_ADMIN";
+    adminMenu.hidden = data.user.role !== "ROLE_ADMIN";
     if (data.user.role === "ROLE_ADMIN") renderLocationAdmin();
+    setView("manage");
     render();
 }
 
+function setView(view) {
+    activeView = view;
+    document.querySelector("#manage-view").hidden = view !== "manage";
+    document.querySelector("#inventory-view").hidden = view !== "inventory";
+    viewTabs.forEach(tab => {
+        const selected = tab.dataset.view === view;
+        tab.classList.toggle("active", selected);
+        tab.setAttribute("aria-selected", selected.toString());
+    });
+}
+
 function renderLocationAdmin() {
-    stationAdminList.innerHTML = `<p class="admin-list-title">Stationen</p>${dataRows(STATIONS.map(name => ({ id: name, name, detail: STATION_COLORS[name] || "" })), "station")}`;
+    stationAdminList.innerHTML = `<p class="admin-list-title">Stationen</p>${dataRows(STATIONS.map(name => ({ id: name, name, detail: STATION_COLORS[name] || "mint", color: colorToHex(STATION_COLORS[name]) })), "station")}`;
     roomAdminList.innerHTML = `<p class="admin-list-title">Räume</p>${dataRows(state.rooms.map(room => ({ id: room.id, name: room.name, detail: room.stationId })), "room")}`;
 }
 
 function dataRows(items, type) {
-    return items.length ? items.map(item => `<div class="admin-row"><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.detail)}</small></span><span class="admin-actions"><button class="small-button" type="button" data-admin-action="edit-${type}" data-admin-id="${escapeAttribute(item.id)}">Bearbeiten</button><button class="small-button danger-button" type="button" data-admin-action="delete-${type}" data-admin-id="${escapeAttribute(item.id)}">Löschen</button></span></div>`).join("") : '<p class="admin-empty">Keine Einträge</p>';
+    return items.length ? items.map(item => `<div class="admin-row"><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.detail)}</small></span><span class="admin-actions">${type === "station" ? `<input class="color-picker" type="color" value="${escapeAttribute(item.color)}" data-admin-action="change-station-color" data-admin-id="${escapeAttribute(item.id)}" aria-label="Farbe für ${escapeAttribute(item.name)} auswählen" title="Farbe auswählen">` : ""}<button class="small-button" type="button" data-admin-action="edit-${type}" data-admin-id="${escapeAttribute(item.id)}">Bearbeiten</button><button class="small-button danger-button" type="button" data-admin-action="delete-${type}" data-admin-id="${escapeAttribute(item.id)}">Löschen</button></span></div>`).join("") : '<p class="admin-empty">Keine Einträge</p>';
 }
 
 async function handleLocationAdmin(event) {
     const button = event.target.closest("[data-admin-action]");
     if (!button) return;
+    if (event.type === "click" && button.matches("input[type=\"color\"]")) return;
     const action = button.dataset.adminAction;
     const id = button.dataset.adminId;
     const item = action.includes("station") ? STATIONS.find(name => name === id) : state.rooms.find(room => room.id === id);
     if (!item) return;
     try {
-        if (action === "edit-station") {
+        if (action === "change-station-color") {
+            const color = button.value;
+            if (!/^#[0-9a-f]{6}$/i.test(color)) return showToast("Ungültige Farbe.");
+            await api(`/api/admin/stations/${encodeURIComponent(STATION_IDS[id])}`, { method: "PUT", body: JSON.stringify({ name: item, color }) });
+            await refreshInventory(); showToast("Stationsfarbe gespeichert."); return;
+        } else if (action === "edit-station") {
             const name = prompt("Name der Station", item);
             if (name === null || !name.trim()) return;
-            const color = prompt("Farbe der Station", STATION_COLORS[item] || "mint");
-            if (color === null || !color.trim()) return;
-            await api(`/api/admin/stations/${encodeURIComponent(STATION_IDS[id])}`, { method: "PUT", body: JSON.stringify({ name: name.trim(), color: color.trim() }) });
+            await api(`/api/admin/stations/${encodeURIComponent(STATION_IDS[id])}`, { method: "PUT", body: JSON.stringify({ name: name.trim(), color: STATION_COLORS[item] || "mint" }) });
         } else if (action === "delete-station") {
             if (!confirm(`Station "${item}" wirklich löschen?`)) return;
             await api(`/api/admin/stations/${encodeURIComponent(STATION_IDS[id])}`, { method: "DELETE" });
@@ -154,7 +174,7 @@ function showToast(message) {
 function roomById(id) { return state.rooms.find(room => room.id === id); }
 function formatDate(timestamp) { return new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" }).format(new Date(timestamp)); }
 function statusLabel(status) { return { active: "Aktiv", empty: "Leer", missing: "Missing", deactivated: "Deaktiviert" }[status]; }
-function stationColor(stationId) { return STATION_COLORS[stationId] || "mint"; }
+function colorToHex(color) { return /^#[0-9a-f]{6}$/i.test(color || "") ? color : COLOR_VALUES[color] || COLOR_VALUES.mint; }
 function roomHistory(roomId) { return state.bottles.filter(bottle => bottle.history.some(entry => entry.action.startsWith("assigned") && (entry.fromRoomId === roomId || entry.toRoomId === roomId))); }
 function selectedFilterValues(name) { return new Set([...filterPanel.querySelectorAll(`input[name="${name}"]:checked`)].map(input => input.value)); }
 function matchesBottleQuery(bottle, query) {
@@ -203,7 +223,7 @@ function render() {
 function roomCard(room, bottles, index, unassigned = false) {
     const bottleMarkup = bottles.length ? `<ul class="bottle-list">${bottles.map(bottle => bottleRow(bottle, room.id)).join("")}</ul>` : `<p class="empty-bottle">Keine Flaschen zugewiesen</p>`;
     const history = unassigned ? "" : `<details class="room-history"><summary>Raumhistorie</summary><ol>${roomHistory(room.id).flatMap(bottle => bottle.history.filter(entry => entry.fromRoomId === room.id || entry.toRoomId === room.id).map(entry => `<li><strong>${escapeHtml(bottle.code)}</strong><span>${entry.fromRoomId === room.id ? "ausgehend" : "eingegangen"} · ${formatDate(entry.movedAt)}</span></li>`)).join("") || "<li>Keine Bewegungen erfasst.</li>"}</ol></details>`;
-    return `<article class="room-card room-${escapeAttribute(room.color || "mint")} ${unassigned ? "unassigned-card" : ""}" style="animation-delay:${index * 60}ms"><header><div><h3>${escapeHtml(room.name)}</h3>${unassigned ? "" : `<span class="station-label">Station ${escapeHtml(room.stationId)}</span>`}</div><span class="room-count">${bottles.length.toString().padStart(2, "0")} FL</span></header>${bottleMarkup}${history}</article>`;
+    return `<article class="room-card ${unassigned ? "unassigned-card" : ""}" style="--room-accent:${escapeAttribute(colorToHex(room.color))};animation-delay:${index * 60}ms"><header><div><h3>${escapeHtml(room.name)}</h3>${unassigned ? "" : `<span class="station-label">Station ${escapeHtml(room.stationId)}</span>`}</div><span class="room-count">${bottles.length.toString().padStart(2, "0")} FL</span></header>${bottleMarkup}${history}</article>`;
 }
 
 function bottleRow(bottle, fromRoomId) {
@@ -356,6 +376,8 @@ document.querySelector("#login-form").addEventListener("submit", async event => 
 document.querySelector("#logout-button").addEventListener("click", async () => {
     await api("/api/auth/logout", { method: "POST" });
     document.querySelector("#logout-button").hidden = true;
+    adminMenu.hidden = true;
+    adminMenu.open = false;
     document.querySelector("#connection-status").textContent = "Nicht angemeldet";
     showLogin();
 });
@@ -371,4 +393,6 @@ document.querySelector("#user-form").addEventListener("submit", async event => {
     } catch (error) { showToast(error.message); }
 });
 locationAdmin.addEventListener("click", handleLocationAdmin);
+locationAdmin.addEventListener("change", handleLocationAdmin);
+viewTabs.forEach(tab => tab.addEventListener("click", () => setView(tab.dataset.view)));
 api("/api/auth/me").then(refreshInventory).catch(() => showLogin());

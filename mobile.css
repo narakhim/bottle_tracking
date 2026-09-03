@@ -1,0 +1,20 @@
+@media (max-width: 700px) {
+    .topbar, main { padding-left: 16px; padding-right: 16px; }
+    .topbar { padding-top: 10px; padding-bottom: 10px; }
+    .brand { gap: 8px; font-size: 10px; }
+    .brand-mark { width: 30px; height: 30px; }
+    .brand strong { font-size: 12px; }
+    .status { gap: 5px; font-size: 10px; }
+    .status-dot { width: 6px; height: 6px; }
+    .intro { display: none; }
+    .workspace { display: block; margin-top: 16px; }
+    .view-tabs { display: block; }
+    .view-tab { display: block; width: 100%; padding: 12px 14px; text-align: left; }
+    .view-tab[data-view="inventory"] { display: none; }
+    #inventory-view { display: none !important; }
+    .control-panel { padding: 22px 18px; }
+    .control-panel .panel-heading { display: none; }
+    .quick-assign { margin: 26px -18px 0; padding: 22px 18px 0; }
+    .quick-assign-heading h3 { margin-bottom: 17px; }
+    .tip { margin: 28px 0 18px; }
+}

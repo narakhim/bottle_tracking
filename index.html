@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#102a43">
+    <meta name="theme-color" content="#063b73">
     <title>Gasflaschen Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
     <header class="topbar">
@@ -16,7 +17,20 @@
             <span class="brand-mark" aria-hidden="true">GT</span>
             <span>Gasflaschen<br><strong>Tracker</strong></span>
         </a>
-        <div class="status"><span class="status-dot"></span><span id="connection-status">Nicht angemeldet</span> <button id="logout-button" class="text-button" type="button" hidden>Abmelden</button></div>
+        <div class="header-actions">
+            <details id="admin-menu" class="admin-menu" hidden>
+                <summary aria-label="Administration öffnen" title="Administration öffnen">Admin</summary>
+                <section id="location-admin" class="location-admin">
+                    <div class="quick-assign-heading">
+                        <span class="panel-kicker">Administration</span>
+                        <h3>Stationen &amp; Räume verwalten</h3>
+                    </div>
+                    <div id="station-admin-list" class="admin-list"></div>
+                    <div id="room-admin-list" class="admin-list"></div>
+                </section>
+            </details>
+            <div class="status"><span class="status-dot"></span><span id="connection-status">Nicht angemeldet</span> <button id="logout-button" class="text-button" type="button" hidden>Abmelden</button></div>
+        </div>
     </header>
 
     <main id="top">
@@ -34,7 +48,11 @@
         </section>
 
         <section class="workspace" aria-label="Tracker Arbeitsbereich">
-            <aside class="control-panel">
+            <nav class="view-tabs" aria-label="Ansichten">
+                <button class="view-tab active" type="button" data-view="manage" aria-selected="true">Verwalten &amp; Schnellzuordnung</button>
+                <button class="view-tab" type="button" data-view="inventory" aria-selected="false">Standortübersicht</button>
+            </nav>
+            <aside id="manage-view" class="control-panel view-panel" aria-label="Verwalten und Schnellzuordnung">
                 <div class="panel-heading">
                     <span class="panel-kicker">Verwalten</span>
                     <h2>Bestand pflegen</h2>
@@ -82,18 +100,10 @@
                     </select>
                     <button class="primary-button" type="submit">Benutzer speichern</button>
                 </form>
-                <section id="location-admin" class="location-admin" hidden>
-                    <div class="quick-assign-heading">
-                        <span class="panel-kicker">Administration</span>
-                        <h3>Stationen &amp; Räume verwalten</h3>
-                    </div>
-                    <div id="station-admin-list" class="admin-list"></div>
-                    <div id="room-admin-list" class="admin-list"></div>
-                </section>
                 <button id="reset-button" class="text-button" type="button">Demo-Daten zur&uuml;cksetzen <span>&rarr;</span></button>
             </aside>
 
-            <div class="inventory-panel">
+            <div id="inventory-view" class="inventory-panel view-panel" hidden>
                 <div class="inventory-toolbar">
                     <div>
                         <span class="panel-kicker">Standort&uuml;bersicht</span>

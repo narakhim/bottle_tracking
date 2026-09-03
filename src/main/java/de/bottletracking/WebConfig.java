@@ -8,7 +8,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/", "/index.html", "/app.js", "/styles.css")
+        registry.addResourceHandler("/", "/index.html", "/app.js", "/styles.css", "/mobile.css")
             .addResourceLocations("file:./");
     }
 }
