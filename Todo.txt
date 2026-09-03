@@ -1,10 +1,12 @@
-history soll statusveränderungen dokumentieren
-csv soll nur gefilterte elemente speichern
-
-er diagramm von datenbank 3. normalform
 mehr app feeling
 bcd ui elemente
 seperates css für web und mobile
+scrollbars in den räumen
+farbe korrigieren
+admin bereich registerkarte
+side by side chooser im filter
+search nach raum und flaschen unterteilen
+barrierefrei
 
 $env:DB_PASSWORD = "bcd1234567"
 $env:INITIAL_ADMIN_PASSWORD = "bcd1234567"

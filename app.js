@@ -33,10 +33,10 @@ const scannerMessage = document.querySelector("#scanner-message");
 const bulkRoomSelect = document.querySelector("#bulk-room-select");
 const bulkBottleInput = document.querySelector("#bulk-bottle-input");
 const bulkAssignStatus = document.querySelector("#bulk-assign-status");
-const locationAdmin = document.querySelector("#location-admin");
+const adminView = document.querySelector("#admin-view");
+const adminTab = document.querySelector("#admin-tab");
 const stationAdminList = document.querySelector("#station-admin-list");
 const roomAdminList = document.querySelector("#room-admin-list");
-const adminMenu = document.querySelector("#admin-menu");
 const viewTabs = [...document.querySelectorAll("[data-view]")];
 let activeView = "manage";
 
@@ -103,9 +103,8 @@ async function refreshInventory() {
     document.querySelector("#connection-status").textContent = `Angemeldet: ${data.user.username}`;
     document.querySelector("#logout-button").hidden = false;
     document.querySelector("#user-form").hidden = data.user.role !== "ROLE_ADMIN";
-    adminMenu.hidden = data.user.role !== "ROLE_ADMIN";
+    adminTab.hidden = data.user.role !== "ROLE_ADMIN";
     if (data.user.role === "ROLE_ADMIN") renderLocationAdmin();
-    setView("manage");
     render();
 }
 
@@ -113,6 +112,7 @@ function setView(view) {
     activeView = view;
     document.querySelector("#manage-view").hidden = view !== "manage";
     document.querySelector("#inventory-view").hidden = view !== "inventory";
+    adminView.hidden = view !== "admin";
     viewTabs.forEach(tab => {
         const selected = tab.dataset.view === view;
         tab.classList.toggle("active", selected);
@@ -191,12 +191,19 @@ function render() {
     const query = searchInput.value.trim().toLowerCase();
     const selectedStatuses = selectedFilterValues("status-filter");
     const selectedStations = selectedFilterValues("station-filter");
-    const selectedRooms = new Set([...selectedFilterValues("room-filter")].filter(roomId => roomId === "__storage" || state.rooms.some(room => room.id === roomId)));
+    const availableRooms = selectedStations.size
+        ? state.rooms.filter(room => selectedStations.has(room.stationId))
+        : state.rooms;
+    const selectedRooms = new Set([...selectedFilterValues("room-filter")].filter(roomId => (
+        roomId === "__storage"
+            ? !selectedStations.size
+            : availableRooms.some(room => room.id === roomId)
+    )));
     const selectedStation = roomStation.value;
     roomStation.innerHTML = STATIONS.map(station => `<option value="${escapeAttribute(station)}">${escapeHtml(station)}</option>`).join("");
     roomStation.value = STATIONS.includes(selectedStation) ? selectedStation : STATIONS[0];
     stationFilter.innerHTML = STATIONS.map(station => `<label><input name="station-filter" type="checkbox" value="${escapeAttribute(station)}"${selectedStations.has(station) ? " checked" : ""}> ${escapeHtml(station)}</label>`).join("");
-    roomFilter.innerHTML = `<label><input name="room-filter" type="checkbox" value="__storage"${selectedRooms.has("__storage") ? " checked" : ""}> Lager</label>${state.rooms.map(room => `<label><input name="room-filter" type="checkbox" value="${escapeAttribute(room.id)}"${selectedRooms.has(room.id) ? " checked" : ""}> ${escapeHtml(room.name)}</label>`).join("")}`;
+    roomFilter.innerHTML = `${selectedStations.size ? "" : `<label><input name="room-filter" type="checkbox" value="__storage"${selectedRooms.has("__storage") ? " checked" : ""}> Lager</label>`}${availableRooms.map(room => `<label><input name="room-filter" type="checkbox" value="${escapeAttribute(room.id)}"${selectedRooms.has(room.id) ? " checked" : ""}> ${escapeHtml(room.name)}</label>`).join("")}`;
     filterCount.textContent = selectedStatuses.size + selectedStations.size + selectedRooms.size;
     const visibleBottles = state.bottles.filter(bottle => matchesBottleQuery(bottle, query));
     const visibleRooms = state.rooms.filter(room => (!selectedStations.size || selectedStations.has(room.stationId)) && (!selectedRooms.size || selectedRooms.has(room.id)) && (!query || room.name.toLowerCase().includes(query) || visibleBottles.some(bottle => bottle.currentRoomId === room.id))).sort((firstRoom, secondRoom) => {
@@ -204,6 +211,7 @@ function render() {
         return stationOrder || firstRoom.name.localeCompare(secondRoom.name, "de");
     });
     const filteredBottles = visibleBottles.filter(bottle => (!selectedStatuses.size || selectedStatuses.has(bottle.status)) && (!selectedStations.size || selectedStations.has(roomById(bottle.currentRoomId)?.stationId)) && (!selectedRooms.size || (bottle.currentRoomId === null ? selectedRooms.has("__storage") : selectedRooms.has(bottle.currentRoomId))));
+    renderSearchResults(query, visibleRooms, visibleBottles);
     totalCount.textContent = state.bottles.length;
     const selectedRoom = bulkRoomSelect.value;
     bulkRoomSelect.innerHTML = `<option value="">Zielraum auswählen...</option>${state.rooms.map(room => `<option value="${escapeAttribute(room.id)}">${escapeHtml(room.name)}</option>`).join("")}`;
@@ -220,8 +228,19 @@ function render() {
     emptyState.querySelector("p").textContent = query && !cards.length ? "Passe deinen Suchbegriff an." : "Lege links einen Raum oder eine Flasche an.";
 }
 
+function renderSearchResults(query, rooms, bottles) {
+    if (!query) {
+        document.querySelector("#search-results").hidden = true;
+        return;
+    }
+    const roomResults = rooms.filter(room => room.name.toLowerCase().includes(query));
+    const bottleResults = bottles.filter(bottle => bottle.code.toLowerCase().includes(query));
+    document.querySelector("#search-results").hidden = false;
+    document.querySelector("#search-results").innerHTML = `<section aria-labelledby="search-rooms-title"><h3 id="search-rooms-title">Räume <span>${roomResults.length}</span></h3>${roomResults.length ? `<ul>${roomResults.map(room => `<li>${escapeHtml(room.name)} <small>${escapeHtml(room.stationId)}</small></li>`).join("")}</ul>` : "<p>Keine Räume gefunden.</p>"}</section><section aria-labelledby="search-bottles-title"><h3 id="search-bottles-title">Flaschen <span>${bottleResults.length}</span></h3>${bottleResults.length ? `<ul>${bottleResults.map(bottle => `<li>${escapeHtml(bottle.code)} <small>${escapeHtml(roomById(bottle.currentRoomId)?.name || "Lager")}</small></li>`).join("")}</ul>` : "<p>Keine Flaschen gefunden.</p>"}</section>`;
+}
+
 function roomCard(room, bottles, index, unassigned = false) {
-    const bottleMarkup = bottles.length ? `<ul class="bottle-list">${bottles.map(bottle => bottleRow(bottle, room.id)).join("")}</ul>` : `<p class="empty-bottle">Keine Flaschen zugewiesen</p>`;
+    const bottleMarkup = `<details class="room-bottles"${bottles.length ? "" : " open"}><summary><span>Flaschen im Raum</span><strong>${bottles.length.toString().padStart(2, "0")}</strong></summary>${bottles.length ? `<ul class="bottle-list">${bottles.map(bottle => bottleRow(bottle, room.id)).join("")}</ul>` : `<p class="empty-bottle">Keine Flaschen zugewiesen</p>`}</details>`;
     const history = unassigned ? "" : `<details class="room-history"><summary>Raumhistorie</summary><ol>${roomHistory(room.id).flatMap(bottle => bottle.history.filter(entry => entry.fromRoomId === room.id || entry.toRoomId === room.id).map(entry => `<li><strong>${escapeHtml(bottle.code)}</strong><span>${entry.fromRoomId === room.id ? "ausgehend" : "eingegangen"} · ${formatDate(entry.movedAt)}</span></li>`)).join("") || "<li>Keine Bewegungen erfasst.</li>"}</ol></details>`;
     return `<article class="room-card ${unassigned ? "unassigned-card" : ""}" style="--room-accent:${escapeAttribute(colorToHex(room.color))};animation-delay:${index * 60}ms"><header><div><h3>${escapeHtml(room.name)}</h3>${unassigned ? "" : `<span class="station-label">Station ${escapeHtml(room.stationId)}</span>`}</div><span class="room-count">${bottles.length.toString().padStart(2, "0")} FL</span></header>${bottleMarkup}${history}</article>`;
 }
@@ -376,8 +395,6 @@ document.querySelector("#login-form").addEventListener("submit", async event => 
 document.querySelector("#logout-button").addEventListener("click", async () => {
     await api("/api/auth/logout", { method: "POST" });
     document.querySelector("#logout-button").hidden = true;
-    adminMenu.hidden = true;
-    adminMenu.open = false;
     document.querySelector("#connection-status").textContent = "Nicht angemeldet";
     showLogin();
 });
@@ -392,7 +409,7 @@ document.querySelector("#user-form").addEventListener("submit", async event => {
         showToast(`Benutzer "${username}" wurde angelegt.`);
     } catch (error) { showToast(error.message); }
 });
-locationAdmin.addEventListener("click", handleLocationAdmin);
-locationAdmin.addEventListener("change", handleLocationAdmin);
+adminView.addEventListener("click", handleLocationAdmin);
+adminView.addEventListener("change", handleLocationAdmin);
 viewTabs.forEach(tab => tab.addEventListener("click", () => setView(tab.dataset.view)));
 api("/api/auth/me").then(refreshInventory).catch(() => showLogin());

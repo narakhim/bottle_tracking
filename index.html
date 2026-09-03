@@ -8,8 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="mobile.css">
+    <link rel="stylesheet" href="styles.css" media="screen and (min-width: 769px)">
+    <link rel="stylesheet" href="mobile.css" media="screen and (max-width: 768px)">
 </head>
 <body>
     <header class="topbar">
@@ -18,17 +18,6 @@
             <span>Gasflaschen<br><strong>Tracker</strong></span>
         </a>
         <div class="header-actions">
-            <details id="admin-menu" class="admin-menu" hidden>
-                <summary aria-label="Administration öffnen" title="Administration öffnen">Admin</summary>
-                <section id="location-admin" class="location-admin">
-                    <div class="quick-assign-heading">
-                        <span class="panel-kicker">Administration</span>
-                        <h3>Stationen &amp; Räume verwalten</h3>
-                    </div>
-                    <div id="station-admin-list" class="admin-list"></div>
-                    <div id="room-admin-list" class="admin-list"></div>
-                </section>
-            </details>
             <div class="status"><span class="status-dot"></span><span id="connection-status">Nicht angemeldet</span> <button id="logout-button" class="text-button" type="button" hidden>Abmelden</button></div>
         </div>
     </header>
@@ -51,12 +40,9 @@
             <nav class="view-tabs" aria-label="Ansichten">
                 <button class="view-tab active" type="button" data-view="manage" aria-selected="true">Verwalten &amp; Schnellzuordnung</button>
                 <button class="view-tab" type="button" data-view="inventory" aria-selected="false">Standortübersicht</button>
+                <button id="admin-tab" class="view-tab" type="button" data-view="admin" aria-selected="false" hidden>Administration</button>
             </nav>
             <aside id="manage-view" class="control-panel view-panel" aria-label="Verwalten und Schnellzuordnung">
-                <div class="panel-heading">
-                    <span class="panel-kicker">Verwalten</span>
-                    <h2>Bestand pflegen</h2>
-                </div>
                 <form id="room-form" class="form-block">
                     <label for="room-name">Neuen Raum anlegen</label>
                     <div class="input-row">
@@ -67,11 +53,7 @@
                     <label class="sub-label" for="room-station">Station</label>
                     <select id="room-station" class="form-select" required></select>
                 </form>
-                <div class="quick-assign">
-                    <div class="quick-assign-heading">
-                        <span class="panel-kicker">Schnellzuordnung</span>
-                        <h3>Mehrere Flaschen einem Raum zuweisen</h3>
-                    </div>
+                <div class="quick-assign" role="group" aria-label="Schnellzuordnung">
                     <label for="bulk-room-select">Zielraum</label>
                     <div class="quick-room-row">
                         <select id="bulk-room-select" aria-label="Zielraum auswählen"></select>
@@ -90,16 +72,6 @@
                     <span class="tip-icon">i</span>
                     <p>Eine Flasche kann jederzeit einem neuen Raum zugewiesen werden.</p>
                 </div>
-                <form id="user-form" class="form-block" hidden>
-                    <label for="new-username">Benutzer anlegen</label>
-                    <input id="new-username" type="text" placeholder="Benutzername" minlength="3" maxlength="80" required>
-                    <input id="new-password" type="password" placeholder="Passwort (mind. 10 Zeichen)" minlength="10" required>
-                    <select id="new-user-role" class="form-select">
-                        <option value="USER">Benutzer</option>
-                        <option value="ADMIN">Administrator</option>
-                    </select>
-                    <button class="primary-button" type="submit">Benutzer speichern</button>
-                </form>
                 <button id="reset-button" class="text-button" type="button">Demo-Daten zur&uuml;cksetzen <span>&rarr;</span></button>
             </aside>
 
@@ -109,7 +81,7 @@
                         <span class="panel-kicker">Standort&uuml;bersicht</span>
                         <h2>R&auml;ume & Flaschen</h2>
                     </div>
-                    <label class="search-box" aria-label="Bestand durchsuchen">
+                    <label class="search-box" aria-label="Räume und Flaschen durchsuchen">
                         <span aria-hidden="true">&#8981;</span>
                         <input id="search-input" type="search" placeholder="Suchen...">
                     </label>
@@ -123,13 +95,16 @@
                                 <label><input name="status-filter" type="checkbox" value="missing"> Missing</label>
                                 <label><input name="status-filter" type="checkbox" value="deactivated"> Deaktiviert</label>
                             </fieldset>
-                            <fieldset class="filter-group"><legend>Station</legend><div id="station-filter" class="filter-options"></div></fieldset>
-                            <fieldset class="filter-group"><legend>Raum</legend><div id="room-filter" class="filter-options"></div></fieldset>
+                            <div class="filter-location-row">
+                                <fieldset class="filter-group"><legend>Station</legend><div id="station-filter" class="filter-options"></div></fieldset>
+                                <fieldset class="filter-group"><legend>Raum</legend><div id="room-filter" class="filter-options filter-options-scroll"></div></fieldset>
+                            </div>
                         </div>
                     </details>
                     <button id="scan-search-button" class="scan-search-button" type="button" title="Barcode suchen"><span aria-hidden="true">⌁</span> Scannen</button>
                     <button id="export-button" class="export-button" type="button" title="Bestand als CSV exportieren"><span aria-hidden="true">&#8595;</span> CSV exportieren</button>
                 </div>
+                <div id="search-results" class="search-results" aria-live="polite"></div>
                 <div id="room-grid" class="room-grid"></div>
                 <div id="empty-state" class="empty-state" hidden>
                     <span class="empty-mark">--</span>
@@ -137,6 +112,32 @@
                     <p>Lege links einen Raum oder eine Flasche an.</p>
                 </div>
             </div>
+            <section id="admin-view" class="admin-view view-panel" hidden aria-label="Administration">
+                <div class="admin-view-heading">
+                    <span class="panel-kicker">Administration</span>
+                    <h2>Stationen, Räume &amp; Benutzer</h2>
+                </div>
+                <div class="admin-location-grid">
+                    <section class="admin-section" aria-labelledby="location-admin-title">
+                        <h3 id="location-admin-title">Standorte verwalten</h3>
+                        <div id="station-admin-list" class="admin-list"></div>
+                        <div id="room-admin-list" class="admin-list"></div>
+                    </section>
+                    <form id="user-form" class="admin-section">
+                        <h3>Benutzer anlegen</h3>
+                        <label for="new-username">Benutzername</label>
+                        <input id="new-username" type="text" minlength="3" maxlength="80" autocomplete="username" required>
+                        <label for="new-password">Passwort</label>
+                        <input id="new-password" type="password" minlength="10" autocomplete="new-password" required>
+                        <label for="new-user-role">Rolle</label>
+                        <select id="new-user-role" class="form-select">
+                            <option value="USER">Benutzer</option>
+                            <option value="ADMIN">Administrator</option>
+                        </select>
+                        <button class="primary-button" type="submit">Benutzer speichern</button>
+                    </form>
+                </div>
+            </section>
         </section>
     </main>
 
