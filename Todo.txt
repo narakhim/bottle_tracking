@@ -1,14 +1,5 @@
 mehr app feeling
-bcd ui elemente
 seperates css für web und mobile
-scrollbars in den räumen
-farbe korrigieren
-admin bereich registerkarte
 side by side chooser im filter
 search nach raum und flaschen unterteilen
 barrierefrei
-
-$env:DB_PASSWORD = "bcd1234567"
-$env:INITIAL_ADMIN_PASSWORD = "bcd1234567"
-docker compose down -v
-docker compose up --build -d
