@@ -8,8 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css" media="screen and (min-width: 769px)">
-    <link rel="stylesheet" href="mobile.css" media="screen and (max-width: 768px)">
+    <link rel="stylesheet" href="styles.css" 
+
 </head>
 <body>
     <header class="topbar">
@@ -38,8 +38,8 @@
 
         <section class="workspace" aria-label="Tracker Arbeitsbereich">
             <nav class="view-tabs" aria-label="Ansichten">
-                <button class="view-tab active" type="button" data-view="manage" aria-selected="true">Verwalten &amp; Schnellzuordnung</button>
-                <button class="view-tab" type="button" data-view="inventory" aria-selected="false">Standortübersicht</button>
+                <button id="manage-tab" class="view-tab active" type="button" data-view="manage" aria-selected="true">Verwalten &amp; Schnellzuordnung</button>
+                <button id="inventory-tab" class="view-tab" type="button" data-view="inventory" aria-selected="false">Standortübersicht</button>
                 <button id="admin-tab" class="view-tab" type="button" data-view="admin" aria-selected="false" hidden>Administration</button>
             </nav>
             <aside id="manage-view" class="control-panel view-panel" aria-label="Verwalten und Schnellzuordnung">
@@ -132,6 +132,7 @@
                         <label for="new-user-role">Rolle</label>
                         <select id="new-user-role" class="form-select">
                             <option value="USER">Benutzer</option>
+                            <option value="MANAGEMENT">Verwaltungsuser</option>
                             <option value="ADMIN">Administrator</option>
                         </select>
                         <button class="primary-button" type="submit">Benutzer speichern</button>

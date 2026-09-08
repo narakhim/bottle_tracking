@@ -48,10 +48,10 @@ public class AdminUserController {
 
     @PutMapping("/api/admin/users/{username}")
     public Map<String, Object> updateUser(@PathVariable String username, @RequestBody UpdateUserRequest request, Authentication authentication) {
-        if (username.equals(authentication.getName()) && (Boolean.FALSE.equals(request.enabled()) || "USER".equalsIgnoreCase(request.role()))) {
+        if (username.equals(authentication.getName()) && (Boolean.FALSE.equals(request.enabled()) || isNonAdminRole(request.role()))) {
             throw new IllegalArgumentException("Das eigene Administratorkonto kann nicht deaktiviert oder herabgestuft werden.");
         }
-        if (isLastAdmin(username) && (Boolean.FALSE.equals(request.enabled()) || "USER".equalsIgnoreCase(request.role()))) {
+        if (isLastAdmin(username) && (Boolean.FALSE.equals(request.enabled()) || isNonAdminRole(request.role()))) {
             throw new IllegalArgumentException("Mindestens ein aktiver Administrator muss erhalten bleiben.");
         }
         if (request.password() != null && !request.password().isBlank()) {
@@ -88,8 +88,13 @@ public class AdminUserController {
 
     private String authority(String role) {
         if (role == null || "USER".equalsIgnoreCase(role)) return "ROLE_USER";
+        if ("MANAGEMENT".equalsIgnoreCase(role)) return "ROLE_MANAGEMENT";
         if ("ADMIN".equalsIgnoreCase(role)) return "ROLE_ADMIN";
         throw new IllegalArgumentException("Unbekannte Benutzerrolle.");
+    }
+
+    private boolean isNonAdminRole(String role) {
+        return role != null && !"ADMIN".equalsIgnoreCase(role);
     }
 
     private boolean isLastAdmin(String username) {

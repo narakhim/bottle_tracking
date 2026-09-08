@@ -1,19 +1,26 @@
-@media (max-width: 700px) {
+@media (max-width: 768px) {
     .topbar, main { padding-left: 16px; padding-right: 16px; }
     .topbar { padding-top: 10px; padding-bottom: 10px; }
-    .brand { gap: 8px; font-size: 10px; }
+    .brand { display: none; }
     .brand-mark { width: 30px; height: 30px; }
     .brand strong { font-size: 12px; }
     .status { gap: 5px; font-size: 10px; }
     .status-dot { width: 6px; height: 6px; }
-    .intro { display: none; }
+    .intro, .view-tabs, h1, h2, h3, .panel-kicker, .total-label, .total-unit { visibility: none !important; }
+    .inventory-panel, .admin-view { display: none !important; }
     .workspace { display: block; margin-top: 16px; }
-    .view-tabs { display: flex; }
-    .view-tab { display: block; width: auto; padding: 12px 8px; text-align: center; }
-    .view-tab[data-view="inventory"] { display: none; }
-    .view-tab[data-view="admin"] { display: none; }
     #inventory-view { display: none !important; }
     .control-panel { grid-template-columns: 1fr; gap: 16px; padding: 18px; }
     .control-panel .form-block, .control-panel .quick-assign { padding: 18px; }
     .control-panel .tip { margin: 2px 0 0; }
+    .control-panel, .inventory-panel { padding: 28px 22px; }
+    .quick-assign { margin-right: -22px; margin-left: -22px; padding-right: 22px; padding-left: 22px; }
+    .tip { margin-top: 38px; }
+    .inventory-toolbar { display: block; }
+    .search-box { width: 100%; margin: -8px 0 12px; }
+    .filter-menu { margin-bottom: 12px; }
+    .filter-panel { position: static; width: 100%; margin-top: 8px; box-shadow: none; }
+    .scan-search-button { margin-bottom: 12px; }
+    .export-button { margin-bottom: 28px; }
+    .room-grid { grid-template-columns: 1fr; }
 }

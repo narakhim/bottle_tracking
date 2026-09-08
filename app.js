@@ -34,11 +34,15 @@ const bulkRoomSelect = document.querySelector("#bulk-room-select");
 const bulkBottleInput = document.querySelector("#bulk-bottle-input");
 const bulkAssignStatus = document.querySelector("#bulk-assign-status");
 const adminView = document.querySelector("#admin-view");
+const manageTab = document.querySelector("#manage-tab");
+const inventoryTab = document.querySelector("#inventory-tab");
 const adminTab = document.querySelector("#admin-tab");
 const stationAdminList = document.querySelector("#station-admin-list");
 const roomAdminList = document.querySelector("#room-admin-list");
 const viewTabs = [...document.querySelectorAll("[data-view]")];
 let activeView = "manage";
+let currentRole = "ROLE_USER";
+let canEditInventory = false;
 
 function loadState() {
     try {
@@ -102,9 +106,14 @@ async function refreshInventory() {
     };
     document.querySelector("#connection-status").textContent = `Angemeldet: ${data.user.username}`;
     document.querySelector("#logout-button").hidden = false;
-    document.querySelector("#user-form").hidden = data.user.role !== "ROLE_ADMIN";
-    adminTab.hidden = data.user.role !== "ROLE_ADMIN";
+    currentRole = data.user.role;
+    canEditInventory = ["ROLE_MANAGEMENT", "ROLE_ADMIN"].includes(currentRole);
+    document.querySelector("#user-form").hidden = currentRole !== "ROLE_ADMIN";
+    adminTab.hidden = currentRole !== "ROLE_ADMIN";
+    manageTab.hidden = false;
+    inventoryTab.hidden = currentRole === "ROLE_USER";
     if (data.user.role === "ROLE_ADMIN") renderLocationAdmin();
+    setView("manage");
     render();
 }
 
@@ -253,7 +262,8 @@ function bottleRow(bottle, fromRoomId) {
     const selectMarkup = options ? `<select class="move-select" data-bottle-id="${escapeAttribute(bottle.id)}" aria-label="${escapeAttribute(bottle.code)} verschieben"><option value="">Verschieben nach...</option>${options}</select>` : "";
     const nextStatus = bottle.status === "deactivated" ? "active" : "deactivated";
     const nextStatusText = bottle.status === "deactivated" ? "Reaktivieren" : "Deaktivieren";
-    return `<li class="bottle-row"><details class="bottle-details"><summary><span class="bottle-line"><span class="bottle ${bottle.status}">${escapeHtml(bottle.code)}</span><span class="status-chip ${bottle.status}">${statusLabel(bottle.status)}</span></span></summary><div class="bottle-controls">${noteMarkup}${selectMarkup}<button class="small-button" type="button" data-status-id="${escapeAttribute(bottle.id)}" data-status="${bottle.status === "empty" ? "active" : "empty"}">${bottle.status === "empty" ? "Als voll markieren" : "Als leer markieren"}</button><button class="small-button" type="button" data-status-id="${escapeAttribute(bottle.id)}" data-status="missing">Als vermisst markieren</button><button class="small-button" type="button" data-status-id="${escapeAttribute(bottle.id)}" data-status="${nextStatus}">${nextStatusText}</button><details class="history"><summary>Flaschenhistorie (${bottle.history.length})</summary><ol>${historyMarkup}</ol></details></div></details></li>`;
+    const controlsMarkup = canEditInventory ? `<div class="bottle-controls">${noteMarkup}${selectMarkup}<button class="small-button" type="button" data-status-id="${escapeAttribute(bottle.id)}" data-status="${bottle.status === "empty" ? "active" : "empty"}">${bottle.status === "empty" ? "Als voll markieren" : "Als leer markieren"}</button><button class="small-button" type="button" data-status-id="${escapeAttribute(bottle.id)}" data-status="missing">Als vermisst markieren</button><button class="small-button" type="button" data-status-id="${escapeAttribute(bottle.id)}" data-status="${nextStatus}">${nextStatusText}</button></div>` : "";
+    return `<li class="bottle-row"><details class="bottle-details"><summary><span class="bottle-line"><span class="bottle ${bottle.status}">${escapeHtml(bottle.code)}</span><span class="status-chip ${bottle.status}">${statusLabel(bottle.status)}</span></span></summary>${controlsMarkup}<details class="history"><summary>Flaschenhistorie (${bottle.history.length})</summary><ol>${historyMarkup}</ol></details></details></li>`;
 }
 
 function historyLabel(entry) {

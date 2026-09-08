@@ -1,17 +1,9 @@
-mehr app feeling
 bcd ui elemente
-seperates css für web und mobile
-scrollbars in den räumen
-farbe korrigieren
-admin bereich registerkarte
-side by side chooser im filter
 search nach raum und flaschen unterteilen
 barrierefrei
-
 user mit rechten versehen -- ACL
 
 $env:DB_PASSWORD = "0123456789"
 $env:INITIAL_ADMIN_PASSWORD = "0123456789"
 docker compose down -v
 docker compose up --build -d
-

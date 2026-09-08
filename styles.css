@@ -35,6 +35,7 @@
     --yellow: var(--bcd-blue-green);
     --shadow: 0 10px 28px var(--color-shadow);
     --color-shadow: color-mix(in srgb, var(--bcd-left-blue) 12%, transparent);
+    --color-overlay: color-mix(in srgb, var(--bcd-left-blue) 72%, transparent);
 }
 
 * { box-sizing: border-box; }
@@ -224,40 +225,6 @@ input { min-width: 0; border: 0; outline: 0; font: inherit; }
 .login-error { min-height: 18px; color: var(--color-danger); font-size: 13px; }
 .status .text-button { margin: 0; padding: 0; font-size: 11px; }
 
-/* BCD palette and accessible interaction states */
-
-body { color: var(--color-text); background: var(--color-background); }
-body::before { display: none; }
-.topbar { border-bottom-color: var(--color-border); background: var(--color-background); }
-.brand, .total-label, .total-unit, .intro-copy, .room-count, .station-label, .empty-state, .history, .room-history { color: var(--bcd-muted-blue); }
-.brand-mark, .control-panel, .toast { background: var(--bcd-left-blue transparent 0,70); }
-.brand-mark { color: var(--bcd-blue-green); }
-h1, h2, h3, .total-block strong, .room-card h3, .room-bottles summary strong { color: var(--bcd-left-blue); }
-h1 em, .inventory-panel .panel-kicker, .room-history summary, .history summary { color: var(--bcd-red-orange); }
-.panel-kicker, .view-tab.active, .view-tab:hover, .view-tab.active::before, .filter-panel input, .room-bottles summary::after { color: var(--bcd-blue-green); accent-color: var(--bcd-blue-green); }
-.view-tab.active { border-bottom-color: var(--bcd-blue-green); }
-.view-tab.active::before { background: var(--bcd-blue-green); }
-.view-tabs, .workspace, .inventory-panel, .room-card, .filter-panel, .search-box, .small-button, .move-select, .scanner-manual-row input, .login-content input { border-color: var(--bcd-muted-blue); }
-.view-tab, .filter-menu summary, .export-button, .scan-search-button, .small-button { color: var(--bcd-left-blue); }
-.view-tab:hover, .view-tab.active, .filter-menu summary, .room-card, .inventory-panel { background: var(--color-background); }
-.primary-button, .filter-menu summary b { background: var(--color-highlight); color: var(--color-on-contrast); }
-.primary-button:hover, .export-button:hover, .scan-search-button:hover { background: var(--color-secondary); color: var(--color-on-contrast); }
-.scan-button, .icon-button, .text-button, .quick-assign .panel-kicker, .control-panel .panel-kicker, .admin-list-title { color: var(--bcd-blue-green); }
-.admin-menu summary { border-color: var(--bcd-blue-green); color: var(--bcd-blue-green); }
-.admin-menu[open] summary { background: var(--bcd-blue-green); color: #fff; }
-.admin-menu .location-admin { border-top-color: var(--bcd-blue-green); }
-.admin-menu .location-admin .panel-kicker, .admin-menu .admin-list-title { color: var(--bcd-blue-green); }
-.admin-menu .admin-row strong, .admin-menu .location-admin h3 { color: var(--bcd-left-blue); }
-.location-admin .admin-row, .admin-menu .admin-row { border-color: var(--bcd-muted-blue); }
-.room-bottles summary { border-top-color: var(--bcd-muted-blue); }
-.room-bottles summary, .room-bottles summary strong { color: var(--bcd-muted-blue); }
-.room-history { border-top-color: var(--bcd-muted-blue); }
-.bottle::before { background: var(--bcd-red-orange); }
-.bottle { color: var(--bcd-blue-green); }
-.status-chip { color: var(--bcd-blue-green); }
-.bottle.empty, .status-chip.empty { color: var(--bcd-red-orange); }
-.bottle.missing, .status-chip.missing { color: var(--bcd-red-orange); }
-button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--bcd-red-orange); outline-offset: 3px; }
 .admin-view { padding: 32px; background: var(--color-background); }
 .admin-view-heading h2 { margin: 0 0 24px; }
 .admin-location-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(260px, .75fr); gap: 32px; }
@@ -277,45 +244,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .search-results li small { color: var(--bcd-muted-blue); }
 .search-results p { margin: 0; color: var(--bcd-muted-blue); font-size: 12px; }
 
-/* Final palette contract: all component colors resolve through these tokens. */
-
-body, .inventory-panel, .room-card, .admin-view, .admin-section, .search-results { background: var(--color-background); color: var(--color-primary); }
-.control-panel, .toast { background: var(--color-panel); color: var(--color-panel-text); }
-.brand-mark { background: var(--color-primary); color: var(--color-highlight); }
-.brand, h1, h2, h3, .room-card h3, .room-bottles summary strong { color: var(--color-primary); }
-.intro-copy, .total-label, .total-unit, .room-count, .station-label, .history, .room-history, .empty-state, .small-button, .move-select { color: var(--color-secondary); }
-.panel-kicker, .scan-button, .icon-button, .text-button, .room-bottles summary::after { color: var(--color-highlight); }
-h1 em, .history summary, .room-history summary { color: var(--color-alert); }
-.topbar, .workspace, .view-tabs, .room-card, .admin-section, .search-box, .small-button, .move-select, .filter-panel { border-color: var(--color-secondary); }
-.primary-button, .filter-menu summary b { background: var(--color-highlight); color: var(--color-panel-text); }
-.primary-button:hover, .export-button:hover, .scan-search-button:hover { background: var(--color-secondary); color: var(--color-panel-text); }
-.bottle::before { background: var(--color-icon); }
-button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline-color: var(--color-alert); }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-@media (max-width: 700px) {
-    .topbar, main { padding-left: 20px; padding-right: 20px; }
-    .topbar { padding-top: 20px; }
-    .intro { display: block; padding: 72px 0 45px; }
-    h1 { font-size: 56px; }
-    .total-block { margin-top: 45px; }
-    .workspace { display: block; }
-    .control-panel, .inventory-panel { padding: 28px 22px; }
-    .quick-assign { margin-right: -22px; margin-left: -22px; padding-right: 22px; padding-left: 22px; }
-    .tip { margin-top: 38px; }
-    .inventory-toolbar { display: block; }
-    .search-box { width: 100%; margin: -8px 0 12px; }
-    .filter-menu { margin-bottom: 12px; }
-    .filter-panel { position: static; width: 100%; margin-top: 8px; box-shadow: none; }
-    .scan-search-button { margin-bottom: 12px; }
-    .export-button { margin-bottom: 28px; }
-    .room-grid { grid-template-columns: 1fr; }
-}
-
-/* Keep the final cascade on the BCD token system. */
-:root {
-    --color-shadow: color-mix(in srgb, var(--bcd-left-blue) 12%, transparent);
-    --color-overlay: color-mix(in srgb, var(--bcd-left-blue) 72%, transparent);
-}
 body { color: var(--color-text); background: var(--color-background); }
 .topbar, .inventory-panel, .room-card, .admin-view, .admin-section, .search-results { background: var(--color-background); }
 .control-panel { color: var(--color-panel-text); background: var(--color-panel); }
@@ -520,9 +449,29 @@ h1 em { color: var(--color-accent); }
 h1 { font-size: clamp(36px, 4.8vw, 60px); }
 .total-block strong { font-size: 52px; }
 
-@media (max-width: 700px) {
-    .topbar { padding: 10px 20px; }
-    .intro { padding: 36px 0 28px; }
-    h1 { font-size: 44px; }
-    .inventory-panel { padding: 24px 20px; }
+@media (max-width: 768px) {
+    .topbar, main { padding-left: 16px; padding-right: 16px; }
+    .topbar { padding-top: 10px; padding-bottom: 10px; }
+    .brand { display: none; }
+    .brand-mark { width: 30px; height: 30px; }
+    .brand strong { font-size: 12px; }
+    .status { gap: 5px; font-size: 10px; }
+    .status-dot { width: 6px; height: 6px; }
+    .intro, .view-tabs, .panel-kicker, .total-label, .total-unit { display: none; }
+    .inventory-panel, .admin-view { display: none; }
+    .workspace { display: block; margin-top: 16px; }
+    #inventory-view { display: none; }
+    .control-panel { grid-template-columns: 1fr; gap: 16px; padding: 18px; }
+    .control-panel .form-block, .control-panel .quick-assign { padding: 18px; }
+    .control-panel .tip { margin: 2px 0 0; }
+    .control-panel, .inventory-panel { padding: 28px 22px; }
+    .quick-assign { margin-right: -22px; margin-left: -22px; padding-right: 22px; padding-left: 22px; }
+    .tip { margin-top: 38px; }
+    .inventory-toolbar { display: block; }
+    .search-box { width: 100%; margin: -8px 0 12px; }
+    .filter-menu { margin-bottom: 12px; }
+    .filter-panel { position: static; width: 100%; margin-top: 8px; box-shadow: none; }
+    .scan-search-button { margin-bottom: 12px; }
+    .export-button { margin-bottom: 28px; }
+    .room-grid { grid-template-columns: 1fr; }
 }

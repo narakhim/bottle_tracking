@@ -2,6 +2,7 @@ package de.bottletracking;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +17,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/auth/login", "/", "/index.html", "/app.js", "/styles.css").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/inventory/**").hasAnyRole("MANAGEMENT", "ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/inventory/**").hasAnyRole("MANAGEMENT", "ADMIN")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll())
             .formLogin(login -> login.disable())
