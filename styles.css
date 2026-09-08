@@ -24,7 +24,7 @@
     --color-highlight: var(--bcd-blue-green);
     --color-alert: var(--bcd-red-orange);
     --color-icon: var(--bcd-icon-exception);
-    --ink: #000000;
+    --ink: #000000; 
     --muted: var(--bcd-muted-blue);
     --paper: var(--bcd-page);
     --white: var(--bcd-surface);
@@ -415,7 +415,7 @@ h1 em { color: var(--color-accent); }
 .quick-assign { margin-top: 30px; }
 .quick-assign .panel-kicker { color: #9ee3e7; }
 .tip { margin-top: 40px; }
-.text-button { color: #9ee3e7; font-family: "IBM Plex Mono", monospace; }
+.text-button { color: #06127c; font-family: "IBM Plex Mono", monospace; }
 
 .inventory-panel { padding: 32px; background: #fff; }
 .inventory-panel .panel-kicker { color: #323edb; }
@@ -511,9 +511,9 @@ h1 em { color: var(--color-accent); }
 .admin-menu .admin-row small { color: #61758b; }
 .admin-menu .admin-actions .small-button { border-color: #d5dde5; color: #61758b; }
 .admin-menu .color-picker { border-color: #007f91; }
-.control-panel .panel-kicker, .quick-assign .panel-kicker { color: #9ee3e7; }
-.scan-button { color: #9ee3e7; }
-.admin-list-title { color: #9ee3e7; }
+.control-panel .panel-kicker, .quick-assign .panel-kicker { color: #06127c; }
+.scan-button { color: #06127c; }
+.admin-list-title { color: #06127c; }
 .topbar { padding-top: 11px; padding-bottom: 11px; }
 .brand-mark { width: 32px; height: 32px; }
 .intro { padding-top: 42px; padding-bottom: 30px; }
