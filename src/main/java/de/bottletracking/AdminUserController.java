@@ -1,7 +1,10 @@
 package de.bottletracking;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -29,11 +32,28 @@ public class AdminUserController {
 
     @GetMapping("/api/admin/users")
     public List<Map<String, Object>> users() {
-        return jdbc.queryForList("""
+        Map<String, Map<String, Object>> users = new LinkedHashMap<>();
+        Map<String, List<String>> viewAuthorities = new LinkedHashMap<>();
+        List<Map<String, Object>> rows = jdbc.queryForList("""
             SELECT u.username, u.enabled, a.authority
             FROM app_users u JOIN user_authorities a ON a.username = u.username
             ORDER BY u.username
             """);
+        for (Map<String, Object> row : rows) {
+                String username = (String) row.get("username");
+                users.computeIfAbsent(username, key -> {
+                    Map<String, Object> user = new LinkedHashMap<>();
+                    user.put("username", key);
+                    user.put("enabled", row.get("enabled"));
+                    user.put("role", "ROLE_USER");
+                    return user;
+                });
+                String authority = (String) row.get("authority");
+                if (authority.startsWith("ROLE_")) users.get(username).put("role", authority);
+                    if (authority.startsWith("VIEW_")) viewAuthorities.computeIfAbsent(username, key -> new ArrayList<>()).add(authority);
+        }
+                users.forEach((username, user) -> user.put("views", viewAuthorities.getOrDefault(username, List.of())));
+        return new ArrayList<>(users.values());
     }
 
     @PostMapping("/api/admin/users")
@@ -43,6 +63,7 @@ public class AdminUserController {
         String authority = authority(request.role());
         jdbc.update("INSERT INTO app_users (username, password, enabled) VALUES (?, ?, TRUE)", request.username(), passwordEncoder.encode(request.password()));
         jdbc.update("INSERT INTO user_authorities (username, authority) VALUES (?, ?)", request.username(), authority);
+        replaceViewAuthorities(request.username(), request.views(), request.role());
         return Map.of("username", request.username(), "role", authority);
     }
 
@@ -63,10 +84,8 @@ public class AdminUserController {
             jdbc.update("DELETE FROM user_authorities WHERE username = ?", username);
             jdbc.update("INSERT INTO user_authorities (username, authority) VALUES (?, ?)", username, authority(request.role()));
         }
-        return jdbc.queryForMap("""
-            SELECT u.username, u.enabled, a.authority
-            FROM app_users u JOIN user_authorities a ON a.username = u.username WHERE u.username = ?
-            """, username);
+        if (request.views() != null) replaceViewAuthorities(username, request.views(), request.role());
+        return users().stream().filter(user -> username.equals(user.get("username"))).findFirst().orElseThrow();
     }
 
     @DeleteMapping("/api/admin/users/{username}")
@@ -97,6 +116,22 @@ public class AdminUserController {
         return role != null && !"ADMIN".equalsIgnoreCase(role);
     }
 
+    private void replaceViewAuthorities(String username, List<String> views, String role) {
+        jdbc.update("DELETE FROM user_authorities WHERE username = ? AND authority LIKE 'VIEW_%'", username);
+        List<String> effectiveViews = views == null || views.isEmpty() ? defaultViews(role) : views;
+        for (String view : effectiveViews) {
+            if (Set.of("VIEW_MANAGE", "VIEW_INVENTORY", "VIEW_ADMIN").contains(view)) {
+                jdbc.update("INSERT INTO user_authorities (username, authority) VALUES (?, ?)", username, view);
+            }
+        }
+    }
+
+    private List<String> defaultViews(String role) {
+        if ("ADMIN".equalsIgnoreCase(role)) return List.of("VIEW_MANAGE", "VIEW_INVENTORY", "VIEW_ADMIN");
+        if ("MANAGEMENT".equalsIgnoreCase(role)) return List.of("VIEW_MANAGE", "VIEW_INVENTORY");
+        return List.of("VIEW_MANAGE");
+    }
+
     private boolean isLastAdmin(String username) {
         Integer admins = jdbc.queryForObject("""
             SELECT COUNT(*) FROM app_users u JOIN user_authorities a ON a.username = u.username
@@ -108,6 +143,6 @@ public class AdminUserController {
         return Boolean.TRUE.equals(isAdmin) && admins != null && admins <= 1;
     }
 
-    public record CreateUserRequest(String username, String password, String role) { }
-    public record UpdateUserRequest(String password, String role, Boolean enabled) { }
+    public record CreateUserRequest(String username, String password, String role, List<String> views) { }
+    public record UpdateUserRequest(String password, String role, Boolean enabled, List<String> views) { }
 }

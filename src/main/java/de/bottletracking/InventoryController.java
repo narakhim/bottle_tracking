@@ -3,6 +3,7 @@ package de.bottletracking;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -50,7 +51,8 @@ public class InventoryController {
         bottles.forEach(bottle -> bottle.put("history", historyByBottle.getOrDefault(
             ((Number) bottle.get("id")).longValue(), List.of())));
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("user", Map.of("username", authentication.getName(), "role", authentication.getAuthorities().iterator().next().getAuthority()));
+        Set<String> authorities = authentication.getAuthorities().stream().map(granted -> granted.getAuthority()).collect(Collectors.toSet());
+        response.put("user", Map.of("username", authentication.getName(), "role", authorities.stream().filter(value -> value.startsWith("ROLE_")).findFirst().orElse("ROLE_USER"), "views", authorities.stream().filter(value -> value.startsWith("VIEW_")).toList()));
         response.put("stations", stations);
         response.put("rooms", rooms);
         response.put("bottles", bottles);

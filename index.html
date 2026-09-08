@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css" 
-
 </head>
+
 <body>
     <header class="topbar">
         <a class="brand" href="#top" aria-label="Gasflaschen Tracker Startseite">
@@ -135,7 +135,16 @@
                             <option value="MANAGEMENT">Verwaltungsuser</option>
                             <option value="ADMIN">Administrator</option>
                         </select>
+                        <fieldset class="view-permissions">
+                            <legend>Registerkarten</legend>
+                            <label><input id="new-view-manage" type="checkbox" value="VIEW_MANAGE" checked> Verwalten &amp; Schnellzuordnung</label>
+                            <label><input id="new-view-inventory" type="checkbox" value="VIEW_INVENTORY"> Standortübersicht</label>
+                            <label><input id="new-view-admin" type="checkbox" value="VIEW_ADMIN"> Administration</label>
+                        </fieldset>
                         <button class="primary-button" type="submit">Benutzer speichern</button>
+                        <label class="user-search-label" for="user-search">Benutzer suchen</label>
+                        <input id="user-search" class="user-search" type="search" placeholder="Benutzername suchen..." autocomplete="off">
+                        <div id="user-admin-list" class="admin-list"></div>
                     </form>
                 </div>
             </section>

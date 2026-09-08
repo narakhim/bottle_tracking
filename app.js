@@ -39,10 +39,14 @@ const inventoryTab = document.querySelector("#inventory-tab");
 const adminTab = document.querySelector("#admin-tab");
 const stationAdminList = document.querySelector("#station-admin-list");
 const roomAdminList = document.querySelector("#room-admin-list");
+const userAdminList = document.querySelector("#user-admin-list");
+const userSearchInput = document.querySelector("#user-search");
 const viewTabs = [...document.querySelectorAll("[data-view]")];
 let activeView = "manage";
 let currentRole = "ROLE_USER";
 let canEditInventory = false;
+let viewPermissions = new Set(["VIEW_MANAGE"]);
+let userAdminRecords = [];
 
 function loadState() {
     try {
@@ -108,16 +112,22 @@ async function refreshInventory() {
     document.querySelector("#logout-button").hidden = false;
     currentRole = data.user.role;
     canEditInventory = ["ROLE_MANAGEMENT", "ROLE_ADMIN"].includes(currentRole);
+    viewPermissions = new Set(data.user.views?.length ? data.user.views : defaultViewsForRole(currentRole));
     document.querySelector("#user-form").hidden = currentRole !== "ROLE_ADMIN";
     adminTab.hidden = currentRole !== "ROLE_ADMIN";
-    manageTab.hidden = false;
-    inventoryTab.hidden = currentRole === "ROLE_USER";
-    if (data.user.role === "ROLE_ADMIN") renderLocationAdmin();
-    setView("manage");
+    manageTab.hidden = !viewPermissions.has("VIEW_MANAGE");
+    inventoryTab.hidden = !viewPermissions.has("VIEW_INVENTORY");
+    adminTab.hidden = !viewPermissions.has("VIEW_ADMIN") || currentRole !== "ROLE_ADMIN";
+    if (data.user.role === "ROLE_ADMIN") {
+        renderLocationAdmin();
+        renderUserAdmin();
+    }
+    setView(viewPermissions.has("VIEW_MANAGE") ? "manage" : viewPermissions.has("VIEW_INVENTORY") ? "inventory" : "admin");
     render();
 }
 
 function setView(view) {
+    if (!viewPermissions.has(`VIEW_${view.toUpperCase()}`)) return;
     activeView = view;
     document.querySelector("#manage-view").hidden = view !== "manage";
     document.querySelector("#inventory-view").hidden = view !== "inventory";
@@ -127,6 +137,27 @@ function setView(view) {
         tab.classList.toggle("active", selected);
         tab.setAttribute("aria-selected", selected.toString());
     });
+}
+
+function defaultViewsForRole(role) {
+    if (role === "ROLE_ADMIN") return ["VIEW_MANAGE", "VIEW_INVENTORY", "VIEW_ADMIN"];
+    if (role === "ROLE_MANAGEMENT") return ["VIEW_MANAGE", "VIEW_INVENTORY"];
+    return ["VIEW_MANAGE"];
+}
+
+async function renderUserAdmin() {
+    userAdminRecords = await api("/api/admin/users");
+    renderUserAdminList();
+}
+
+function renderUserAdminList() {
+    const query = userSearchInput.value.trim().toLowerCase();
+    const users = userAdminRecords.filter(user => user.username.toLowerCase().includes(query));
+    userAdminList.innerHTML = `<p class="admin-list-title">Benutzerrechte (${users.length})</p>${users.length ? users.map(user => {
+        const views = new Set(user.views?.length ? user.views : defaultViewsForRole(user.role));
+        const roleLabel = { ROLE_USER: "Benutzer", ROLE_MANAGEMENT: "Verwaltungsuser", ROLE_ADMIN: "Administrator" }[user.role] || user.role;
+        return `<details class="user-permission-menu" data-user="${escapeAttribute(user.username)}"><summary><strong>${escapeHtml(user.username)}</strong><small>${escapeHtml(roleLabel)}</small></summary><div class="user-permission-row"><select class="user-role form-select"><option value="USER"${user.role === "ROLE_USER" ? " selected" : ""}>Benutzer</option><option value="MANAGEMENT"${user.role === "ROLE_MANAGEMENT" ? " selected" : ""}>Verwaltungsuser</option><option value="ADMIN"${user.role === "ROLE_ADMIN" ? " selected" : ""}>Administrator</option></select><label><input type="checkbox" data-view="VIEW_MANAGE"${views.has("VIEW_MANAGE") ? " checked" : ""}> Verwalten</label><label><input type="checkbox" data-view="VIEW_INVENTORY"${views.has("VIEW_INVENTORY") ? " checked" : ""}> Übersicht</label><label><input type="checkbox" data-view="VIEW_ADMIN"${views.has("VIEW_ADMIN") ? " checked" : ""}> Admin</label><button class="small-button" type="button" data-user-save>Speichern</button></div></details>`;
+    }).join("") : '<p class="admin-empty">Keine Benutzer gefunden.</p>'}`;
 }
 
 function renderLocationAdmin() {
@@ -413,12 +444,28 @@ document.querySelector("#user-form").addEventListener("submit", async event => {
     const username = document.querySelector("#new-username").value.trim();
     const password = document.querySelector("#new-password").value;
     const role = document.querySelector("#new-user-role").value;
+    const views = [...document.querySelectorAll("#user-form input[data-new-view]:checked")].map(input => input.value);
     try {
-        await api("/api/admin/users", { method: "POST", body: JSON.stringify({ username, password, role }) });
+        await api("/api/admin/users", { method: "POST", body: JSON.stringify({ username, password, role, views }) });
         event.target.reset();
+        document.querySelector("#new-view-manage").checked = true;
+        await renderUserAdmin();
         showToast(`Benutzer "${username}" wurde angelegt.`);
     } catch (error) { showToast(error.message); }
 });
+document.querySelectorAll("#new-view-manage, #new-view-inventory, #new-view-admin").forEach(input => input.dataset.newView = "true");
+userAdminList.addEventListener("click", async event => {
+    const button = event.target.closest("[data-user-save]");
+    if (!button) return;
+    const row = button.closest("[data-user]");
+    const views = [...row.querySelectorAll("input[data-view]:checked")].map(input => input.dataset.view);
+    try {
+        await api(`/api/admin/users/${encodeURIComponent(row.dataset.user)}`, { method: "PUT", body: JSON.stringify({ role: row.querySelector(".user-role").value, views }) });
+        await renderUserAdmin();
+        showToast(`Rechte für "${row.dataset.user}" gespeichert.`);
+    } catch (error) { showToast(error.message); }
+});
+userSearchInput.addEventListener("input", renderUserAdminList);
 adminView.addEventListener("click", handleLocationAdmin);
 adminView.addEventListener("change", handleLocationAdmin);
 viewTabs.forEach(tab => tab.addEventListener("click", () => setView(tab.dataset.view)));

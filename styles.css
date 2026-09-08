@@ -207,7 +207,7 @@ input { min-width: 0; border: 0; outline: 0; font: inherit; }
 .location-admin { margin: 35px -30px 0; padding: 25px 30px 0; border-top: 1px solid #1558BC; }
 .location-admin h3 { margin: 0 0 18px; color: var(--white); font-size: 16px; line-height: 1.2; }
 .location-admin .panel-kicker { margin-bottom: 8px; color: var(--coral); }
-.admin-list { display: grid; gap: 7px; margin-bottom: 18px; }
+.admin-list { display: grid; gap: 7px;margin-top: 10px; margin-bottom: 18px; }
 .admin-list-title { margin: 0 0 3px; color: var(--mint-dark); font: 10px "DM Mono", monospace; text-transform: uppercase; }
 .admin-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid #34506a; }
 .admin-row strong, .admin-row small { display: block; overflow-wrap: anywhere; }
@@ -233,6 +233,22 @@ input { min-width: 0; border: 0; outline: 0; font: inherit; }
 .admin-section label { display: block; margin: 12px 0 6px; color: var(--bcd-muted-blue); font: 11px "IBM Plex Mono", monospace; }
 .admin-section > input, .admin-section > .form-select { width: 100%; padding: 10px; border: 1px solid var(--color-secondary); color: var(--color-primary); background: var(--color-background); }
 .admin-section > .primary-button { margin-top: 18px; }
+.view-permissions { display: grid; gap: 7px; margin: 16px 0 0; padding: 12px; border: 1px solid var(--color-secondary); }
+.view-permissions legend { padding: 0 4px; color: var(--color-secondary); font: 10px "IBM Plex Mono", monospace; text-transform: uppercase; }
+.view-permissions label { margin: 0; font: 12px "IBM Plex Sans", sans-serif; }
+.user-permission-row { display: grid; gap: 7px; padding: 12px 0; border-bottom: 1px solid var(--color-secondary); }
+.user-permission-row strong { color: var(--color-primary); font-size: 12px; }
+.user-permission-row .user-role { width: 100%; padding: 7px; }
+.user-permission-row label { margin: 0; font: 11px "IBM Plex Sans", sans-serif; }
+.user-search-label { margin-top: 20px !important; }
+.user-search { width: 100%; padding: 9px; border: 1px solid var(--color-secondary); color: var(--color-primary); background: var(--color-background); }
+.user-permission-menu { border-bottom: 1px solid var(--color-secondary); }
+.user-permission-menu summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; color: var(--color-primary); cursor: pointer; list-style: none; }
+.user-permission-menu summary::-webkit-details-marker { display: none; }
+.user-permission-menu summary::after { content: "+"; color: var(--color-highlight); font-size: 16px; }
+.user-permission-menu[open] summary::after { content: "-"; }
+.user-permission-menu summary small { color: var(--color-secondary); font: 10px "IBM Plex Mono", monospace; }
+.user-permission-menu .user-permission-row { padding: 0 0 12px; border-bottom: 0; }
 .filter-location-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .filter-location-row .filter-group { border: 0; }
 .search-results { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 0 0 20px; padding: 14px; border-left: 3px solid var(--color-highlight); background: var(--color-background); }
