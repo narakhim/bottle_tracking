@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css" 
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -44,14 +44,16 @@
             </nav>
             <aside id="manage-view" class="control-panel view-panel" aria-label="Verwalten und Schnellzuordnung">
                 <form id="room-form" class="form-block">
+
+                    <label class="sub-label" for="room-station">Station</label>
+                    <select id="room-station" class="form-select" required></select>
                     <label for="room-name">Neuen Raum anlegen</label>
                     <div class="input-row">
                         <input id="room-name" type="text" placeholder="z. B. Lager Nord" maxlength="80" required>
                         <button class="scan-button" type="button" data-scan-target="room-name" aria-label="Raumcode scannen" title="Raumcode scannen">⌁</button>
                         <button class="icon-button" type="submit" aria-label="Raum anlegen" title="Raum anlegen">+</button>
                     </div>
-                    <label class="sub-label" for="room-station">Station</label>
-                    <select id="room-station" class="form-select" required></select>
+
                 </form>
                 <div class="quick-assign" role="group" aria-label="Schnellzuordnung">
                     <label for="bulk-room-select">Zielraum</label>

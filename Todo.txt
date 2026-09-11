@@ -1,9 +1,15 @@
-bcd ui elemente
-search nach raum und flaschen unterteilen
+bcd ui elemente?
 barrierefrei
-user mit rechten versehen -- ACL
+layout breiter gestalten
+csv upload der räume ihren barcodes zuordnen kann
+admin bereich in stationen und nutzer unterteilen
+toggle funktion zwischen code/name
+filter und suche kombinieren
+button clear all filter
+rechte an rollen binden
+mobilansicht bearbeiten, nicht über css ausblenden
 
-$env:DB_PASSWORD = "0123456789"
-$env:INITIAL_ADMIN_PASSWORD = "0123456789"
+$env:DB_PASSWORD = "bcd1234567"
+$env:INITIAL_ADMIN_PASSWORD = "bcd1234567"
 docker compose down -v
 docker compose up --build -d
